@@ -155,7 +155,7 @@ func CommandBlock(pack *blockNBT_depends.Package) error {
 		},
 	}, pack.Mainsettings)
 	// get setblock command
-	if pack.BlockInfo.Name != "undefined" {
+	if blockStates != `["noNeedToSetBlock": true]` {
 		if !pack.IsFastMode {
 			pack.Environment.CommandSender.(*commands.CommandSender).SendSizukanaCommand(fmt.Sprintf("tp %d %d %d", pack.BlockInfo.Pos[0], pack.BlockInfo.Pos[1], pack.BlockInfo.Pos[2]))
 			blockNBT_depends.SendWSCommandWithResponce(pack.Environment, reqeust)
@@ -245,17 +245,18 @@ func PlaceCommandBlockWithLegacyMethod(
 		},
 	}
 	// get struct datas
+	pack.BlockInfo.Name = "command_block"
+	if block.CommandBlockData.Mode == packet.CommandBlockRepeating {
+		pack.BlockInfo.Name = "repeating_command_block"
+	}
+	if block.CommandBlockData.Mode == packet.CommandBlockChain {
+		pack.BlockInfo.Name = "chain_command_block"
+	}
+	// set name for command block
 	if block.Block.Name != nil {
-		pack.BlockInfo.Name = "command_block"
-		if block.CommandBlockData.Mode == packet.CommandBlockRepeating {
-			pack.BlockInfo.Name = "repeating_command_block"
-		}
-		if block.CommandBlockData.Mode == packet.CommandBlockChain {
-			pack.BlockInfo.Name = "chain_command_block"
-		}
 		pack.BlockInfo.States = blockStates
 	} else {
-		pack.BlockInfo.Name = "undefined"
+		pack.BlockInfo.States = map[string]interface{}{"noNeedToSetBlock": uint8(1)}
 	}
 	// for operation 26 and more(?)
 	err := CommandBlock(&pack)
