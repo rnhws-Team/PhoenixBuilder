@@ -71,6 +71,9 @@ type CommandBlock struct {
 	Auto               bool
 }
 
+var NoNeedToPlaceCommandBlockStatesMap map[string]interface{} = map[string]interface{}{"noNeedToSetBlock": byte(1)}
+var NoNeedToPlaceCommandBlockStatesString = `[noNeedToSetBlock: true]`
+
 // -------------------------
 
 type SingleItem struct {

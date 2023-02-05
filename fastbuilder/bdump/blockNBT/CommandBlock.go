@@ -155,7 +155,7 @@ func CommandBlock(pack *blockNBT_depends.Package) error {
 		},
 	}, pack.Mainsettings)
 	// get setblock command
-	if blockStates != `["noNeedToSetBlock": true]` {
+	if blockStates != blockNBT_depends.NoNeedToPlaceCommandBlockStatesString {
 		if !pack.IsFastMode {
 			pack.Environment.CommandSender.(*commands.CommandSender).SendSizukanaCommand(fmt.Sprintf("tp %d %d %d", pack.BlockInfo.Pos[0], pack.BlockInfo.Pos[1], pack.BlockInfo.Pos[2]))
 			blockNBT_depends.SendWSCommandWithResponce(pack.Environment, reqeust)
@@ -256,7 +256,7 @@ func PlaceCommandBlockWithLegacyMethod(
 	if block.Block.Name != nil {
 		pack.BlockInfo.States = blockStates
 	} else {
-		pack.BlockInfo.States = map[string]interface{}{"noNeedToSetBlock": uint8(1)}
+		pack.BlockInfo.States = blockNBT_depends.NoNeedToPlaceCommandBlockStatesMap
 	}
 	// for operation 26 and more(?)
 	err := CommandBlock(&pack)
