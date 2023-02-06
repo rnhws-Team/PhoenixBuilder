@@ -12,6 +12,8 @@ import (
 	"phoenixbuilder/minecraft/protocol/packet"
 	"phoenixbuilder/mirror/chunk"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 // convert map[string]interface{} into struct named commandBlock
@@ -157,6 +159,8 @@ func CommandBlock(pack *blockNBT_depends.Package) error {
 	// get setblock command
 	if blockStates != blockNBT_depends.NoNeedToPlaceCommandBlockStatesString {
 		if !pack.IsFastMode {
+			uniqueIdentifier, _ := uuid.NewUUID()
+			pack.Environment.CommandSender.SendWSCommand(fmt.Sprintf("tp %d %d %d", pack.BlockInfo.Pos[0], pack.BlockInfo.Pos[1], pack.BlockInfo.Pos[2]), uniqueIdentifier)
 			pack.Environment.CommandSender.(*commands.CommandSender).SendSizukanaCommand(fmt.Sprintf("tp %d %d %d", pack.BlockInfo.Pos[0], pack.BlockInfo.Pos[1], pack.BlockInfo.Pos[2]))
 			blockNBT_depends.SendWSCommandWithResponce(pack.Environment, reqeust)
 		} else {
