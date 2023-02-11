@@ -11,16 +11,6 @@ import (
 	"github.com/pterm/pterm"
 )
 
-type King struct {
-	*defines.BasicComponent
-	//玩家信息
-	PlayerData map[string]*KingData
-	Tirgger    []string          `json:"触发词"`
-	Usage      string            `json:"描述"`
-	Words      map[string]string `json:"提示词"`
-	Menu       map[string]string `json:"菜单"`
-	Content    KingContent       `json:"国家相关信息"`
-}
 type KingData struct {
 	Master  string
 	Member  map[string]string
@@ -32,6 +22,17 @@ type KingData struct {
 	//申请列表
 	Application map[string]string
 }
+
+type King struct {
+	*defines.BasicComponent
+	PlayerData map[string]*KingData
+	Tirgger    []string          `json:"触发词"`
+	Usage      string            `json:"描述"`
+	Words      map[string]string `json:"提示词"`
+	Menu       map[string]string `json:"菜单"`
+	Content    KingContent       `json:"国家相关信息"`
+}
+
 type KingContent struct {
 	//领地等级可拥有领地数
 	NumOfTerr       map[string]int `json:"领地等级可拥有领地数"`
