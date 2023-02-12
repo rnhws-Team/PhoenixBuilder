@@ -11,6 +11,16 @@ import (
 	"github.com/pterm/pterm"
 )
 
+type King struct {
+	*defines.BasicComponent
+	//玩家信息
+	PlayerData map[string]*KingData
+	Tirgger    []string          `json:"触发词"`
+	Usage      string            `json:"描述"`
+	Words      map[string]string `json:"提示词"`
+	Menu       map[string]string `json:"菜单"`
+	Content    KingContent       `json:"国家相关信息"`
+}
 type KingData struct {
 	Master  string
 	Member  map[string]string
@@ -22,17 +32,6 @@ type KingData struct {
 	//申请列表
 	Application map[string]string
 }
-
-type King struct {
-	*defines.BasicComponent
-	PlayerData map[string]*KingData
-	Tirgger    []string          `json:"触发词"`
-	Usage      string            `json:"描述"`
-	Words      map[string]string `json:"提示词"`
-	Menu       map[string]string `json:"菜单"`
-	Content    KingContent       `json:"国家相关信息"`
-}
-
 type KingContent struct {
 	//领地等级可拥有领地数
 	NumOfTerr       map[string]int `json:"领地等级可拥有领地数"`
@@ -54,25 +53,13 @@ type ProtectPay struct {
 	Cmds     []string `json:"缴纳保护费执行指令"`
 }
 
-func (b *King) Init(cfg *defines.ComponentConfig) {
+func (b *King) Init(cfg *defines.ComponentConfig, storage defines.StorageAndLogProvider) {
 	m, _ := json.Marshal(cfg.Configs)
 	err := json.Unmarshal(m, b)
 	if err != nil {
 		panic(err)
 	}
 	b.PlayerData = make(map[string]*KingData)
-	if cfg.Version == "0.0.1" {
-		cfg.Configs["菜单"] = map[string]string{
-			"主菜单":      "输入 0 购买国家\n输入 1 购买领地\n 输入 2 查看国家详细信息\n输入 3 返回领地  \n输入 4 缴费 \n输入 5 加入国家\n输入 6 国家管理菜单\n输入 7 退出国家",
-			"返回领地菜单格式": "输入 [i] 返回 [领地名字]\n",
-			"申请加入国家格式": "输入 [i] 申请 [国家名字]\n",
-			"管理菜单":     "输入 0 设置传送点\n输入 1 查看申请列表\n输入 2 踢出成员\n输入 3 解散国家",
-			"查看申请列表格式": "输入 [i] 同意[player]的加入申请",
-			"踢出成员菜单格式": "输入 [i] 踢出[player]",
-		}
-		cfg.Version = "0.0.2"
-		cfg.Upgrade()
-	}
 
 }
 func (b *King) Inject(frame defines.MainFrame) {
@@ -134,7 +121,7 @@ func (b *King) Center(chat *defines.GameChat) bool {
 	}) == nil {
 
 	}
-	return true
+	return false
 }
 func (b *King) QuitKing(name string) {
 	kingdom, isin := b.FindkingdomByName(name)
@@ -171,27 +158,11 @@ func (b *King) Manager(name string) {
 			b.LookApplication(name)
 		case "2":
 			b.KickMember(name)
-		case "3":
-			b.Delect(name)
 		}
 
 		return true
 	})
 
-}
-
-// 解散国家
-func (b *King) Delect(name string) {
-	Sayto(b.Frame, name, "确认解散请输入 yes")
-	b.Frame.GetGameControl().SetOnParamMsg(name, func(chat *defines.GameChat) (catch bool) {
-		if len(chat.Msg) > 0 || chat.Msg[0] == "yes" {
-			kingdom, _ := b.FindkingdomByMasterName(name)
-			delete(b.PlayerData, kingdom)
-			Sayto(b.Frame, name, "解散成功")
-		}
-
-		return true
-	})
 }
 
 // 踢出成员
