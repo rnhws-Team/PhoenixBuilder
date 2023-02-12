@@ -46,37 +46,24 @@ jobs:
         sudo apt update
         sudo apt install gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 gcc gcc-aarch64-linux-gnu libgl1-mesa-dev xorg-dev -y
       
-    - name: Setup LLVM dependencies
-      run: |
-        sudo apt install libedit2 libxml2 libncursesw6 binutils elfutils
-        wget -q http://ftp.debian.org/debian/pool/main/libf/libffi/libffi8_3.4.4-1_amd64.deb
-        sudo dpkg -i libffi8_3.4.4-1_amd64.deb
-    - name: Cache LLVM
-      id: cache-llvm
-      uses: actions/cache@v3
-      with:
-        key: llvm-cache
-        path: ~/llvm
-    - name: Download LLVM
-      if: steps.cache-llvm.outputs.cache-hit != 'true'
-      run: |
-        wget -q https://github.com/Torrekie/homebrew-core/releases/download/LLVM-14.0.6/llvm.tar.xz
-        tar xf llvm.tar.xz
-        rm llvm.tar.xz
-        mv llvm/14.0.6 ~/llvm
-    - name: Cache iSH GCC
-      id: cache-ish-gcc
-      uses: actions/cache@v3
-      with:
-        key: ish-gcc-cache
-        path: ~/i686-unknown-linux-musl
-    - name: Download iSH GCC
-      if: steps.cache-ish-gcc.outputs.cache-hit != 'true'
-      run: |
-        wget -q https://github.com/Torrekie/homebrew-core/releases/download/i686-unknown-linux-musl/i686-unknown-linux-musl.tar.xz
-        tar xf i686-unknown-linux-musl.tar.xz
-        rm i686-unknown-linux-musl.tar.xz
-        mv i686-unknown-linux-musl ~/
+#    - name: Setup LLVM dependencies
+#      run: |
+#        sudo apt install libedit2 libxml2 libncursesw6 binutils elfutils
+#        wget -q http://ftp.debian.org/debian/pool/main/libf/libffi/libffi8_3.4.4-1_amd64.deb
+#        sudo dpkg -i libffi8_3.4.4-1_amd64.deb
+#    - name: Cache LLVM
+#      id: cache-llvm
+#      uses: actions/cache@v3
+#      with:
+#        key: llvm-cache
+#        path: ~/llvm
+#    - name: Download LLVM
+#      if: steps.cache-llvm.outputs.cache-hit != 'true'
+#      run: |
+#        wget -q https://github.com/Torrekie/homebrew-core/releases/download/LLVM-14.0.6/llvm.tar.xz
+#        tar xf llvm.tar.xz
+#        rm llvm.tar.xz
+#        mv llvm/14.0.6 ~/llvm
     - name: Set build time
       id: build_time
       run: echo "build_time=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
