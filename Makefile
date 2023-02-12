@@ -1,10 +1,6 @@
 .PHONY: current all current-v8 current-arm64-executable android-executable-armv7 android-executable-arm64 android-executable-x86_64 android-executable-x86 windows-executable windows-executable-x86 windows-executable-x86_64 freebsd-executable freebsd-executable-x86 freebsd-executable-x86_64 freebsd-executable-arm64 netbsd-executable netbsd-executable-x86 netbsd-executable-x86_64 netbsd-executable-arm64 netbsd-executable netbsd-executable-x86 netbsd-executable-x86_64 netbsd-executable-arm64 openwrt-mt7620-mipsel_24kc
 TARGETS:=build/ current current-no-readline current-v8
 PACKAGETARGETS:=
-ifneq (${THEOS},)
-	TARGETS:=${TARGETS} ios-executable ios-lib ios-v8-executable macos macos-v8
-	PACKAGETARGETS:=${PACKAGETARGETS} package/ios
-endif
 ifneq ($(wildcard ${HOME}/android-ndk-r20b),)
 	TARGETS:=${TARGETS} android-v8-executable-arm64 android-executable-armv7 android-executable-arm64 android-executable-x86_64 android-executable-x86
 	PACKAGETARGETS:=${PACKAGETARGETS} package/android
@@ -17,22 +13,6 @@ ifneq ($(wildcard /usr/bin/x86_64-w64-mingw32-gcc),)
 endif
 ifneq ($(wildcard /usr/bin/aarch64-linux-gnu-gcc),)
 	TARGETS:=${TARGETS} current-arm64-executable
-endif
-ifneq ($(wildcard ${HOME}/openwrt-sdk-21.02.2-ramips-mt7620_gcc-8.4.0_musl.Linux-x86_64),)
-	TARGETS:=${TARGETS} openwrt-mt7620-mipsel_24kc
-endif
-ifneq ($(wildcard ${HOME}/openwrt-sdk-22.03.0-rc4-ipq40xx-generic_gcc-11.2.0_musl_eabi.Linux-x86_64),)
-	TARGETS:=${TARGETS} openwrt-ipq40xx-generic-armv7
-endif
-ifneq ($(wildcard ${HOME}/openwrt-sdk-22.03.0-rc4-mediatek-mt7622_gcc-11.2.0_musl.Linux-x86_64),)
-	TARGETS:=${TARGETS} openwrt-mt7622-arm64
-endif
-ifneq ($(wildcard ${HOME}/llvm),)
-	TARGETS:=${TARGETS} netbsd-executable freebsd-executable openbsd-executable
-	# Do other BSDs later
-endif
-ifneq ($(wildcard ${HOME}/i686-unknown-linux-musl),)
-	TARGETS:=${TARGETS} ish-executable
 endif
 
 VERSION=$(shell cat version)
@@ -64,11 +44,6 @@ build/:
 
 #ifeq ($(shell uname | grep -iq 'Linux' && echo 1),1)
 #ifeq ($(shell uname -m | grep -iqE "x86_64|amd64" && echo 1),1)
-#APPEND_GO_TAGS := use_x86_64_linux_rl
-#else
-#APPEND_GO_TAGS :=
-#endif
-#endif
 
 build/phoenixbuilder: build/ ${SRCS_GO}
 	cd depends/stub&&make clean&&cd -
