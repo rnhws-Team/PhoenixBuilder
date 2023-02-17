@@ -756,7 +756,11 @@ func (o *SeverToServerChatRoom) handleAPIEventSend(msg []string) {
 	}
 	for k, v := range super_Link.apiMsgFmt {
 		if v.(map[string]interface{})["发送API事件的关键词"] == apiMsg[0] {
-			sendBack := v.(map[string]interface{})["测试模式(将这个消api息转发出去的同时也转发到自己服)"].(bool)
+			sendBack, err := v.(map[string]interface{})["测试模式(将这个消api息转发出去的同时也转发到自己服)"].(bool)
+			if err != nil{
+				// TODO
+				return
+			}
 			o.sendJson(map[string]interface{}{
 				"data_type": "api.data",
 				"data":      k,
