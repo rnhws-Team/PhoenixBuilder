@@ -1,6 +1,6 @@
 package I18n
 
-var I18nDict_zh_CN map[uint16]string = map[uint16]string{
+var I18nDict_ru_RU map[uint16]string = map[uint16]string{
 	ACME_FailedToGetCommand:             "Не удалось прочитать команду ACME",
 	ACME_FailedToSeek:                   "Недопустимый файл ACME, поскольку операция поиска завершилась неудачей.",
 	ACME_StructureErrorNotice:           "Ошибка файловой структуры",
