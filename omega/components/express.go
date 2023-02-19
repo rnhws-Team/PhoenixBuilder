@@ -148,20 +148,22 @@ func (o *Express) askForPackage(srcPlayer, dstPlayer string) {
 }
 
 func (o *Express) queryPlayer(chat *defines.GameChat) bool {
-	go func() {
-		if name, cancel := utils.QueryForPlayerName(
-			o.Frame.GetGameControl(), chat.Name,
-			"",
-			o.PlayerSearcher); !cancel {
-			o.askForPackage(chat.Name, name)
-		} else {
-			o.Frame.GetGameControl().SayTo(chat.Name, "已取消")
-		}
-	}()
+	if collaborate_func, hasK := o.Frame.GetContext(collaborate.INTERFACE_QUERY_FOR_PLAYER_NAME); hasK {
+		go func() {
+			if name, cancel := collaborate_func.(collaborate.QUERY_FOR_PLAYER_NAME)(
+				chat.Name,
+				"",
+				o.PlayerSearcher); !cancel {
+				o.askForPackage(chat.Name, name)
+			} else {
+				o.Frame.GetGameControl().SayTo(chat.Name, "已取消")
+			}
+		}()
+	}
 	return true
 }
 
-func (o *Express) Init(cfg *defines.ComponentConfig) {
+func (o *Express) Init(cfg *defines.ComponentConfig, storage defines.StorageAndLogProvider) {
 	m, _ := json.Marshal(cfg.Configs)
 	if err := json.Unmarshal(m, o); err != nil {
 		panic(err)

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"phoenixbuilder/minecraft/protocol/packet"
+	"phoenixbuilder/omega/collaborate"
 	"phoenixbuilder/omega/defines"
 	"phoenixbuilder/omega/utils"
 	"strings"
@@ -19,7 +20,7 @@ type Immortal struct {
 	Cmds          []defines.Cmd
 }
 
-func (b *Immortal) Init(cfg *defines.ComponentConfig) {
+func (b *Immortal) Init(cfg *defines.ComponentConfig, storage defines.StorageAndLogProvider) {
 	marshal, _ := json.Marshal(cfg.Configs)
 	if err := json.Unmarshal(marshal, b); err != nil {
 		panic(err)
@@ -67,8 +68,8 @@ func (o *Immortal) doRespawn(name string, pos []int) {
 		"[dead_pos]": pos,
 	})
 	o.Frame.GetGameControl().SayTo(name, msg)
-	if o.AskForRespawn {
-		hint, resolver := utils.GenYesNoResolver()
+	if collaborate_func, hasK := o.Frame.GetContext(collaborate.INTERFACE_GEN_YES_NO_RESOLVER); hasK && o.AskForRespawn {
+		hint, resolver := collaborate_func.(collaborate.GEN_YES_NO_RESOLVER)()
 		if o.Frame.GetGameControl().SetOnParamMsg(name, func(chat *defines.GameChat) (catch bool) {
 			b, err := resolver(chat.Msg)
 			if err != nil {

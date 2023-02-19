@@ -2,40 +2,40 @@ package blockNBT
 
 import (
 	"fmt"
-	blockNBT_depends "phoenixbuilder/fastbuilder/bdump/blockNBT/depends"
-	"phoenixbuilder/fastbuilder/commands_generator"
-	"phoenixbuilder/fastbuilder/environment"
+	blockNBT_API "phoenixbuilder/fastbuilder/bdump/blockNBT/API"
+	blockNBT_CommandBlock "phoenixbuilder/fastbuilder/bdump/blockNBT/CommandBlock"
+	blockNBT_Container "phoenixbuilder/fastbuilder/bdump/blockNBT/Container"
+	blockNBT_global "phoenixbuilder/fastbuilder/bdump/blockNBT/Global"
+	blockNBT_Sign "phoenixbuilder/fastbuilder/bdump/blockNBT/Sign"
 	"phoenixbuilder/fastbuilder/mcstructure"
 	"phoenixbuilder/fastbuilder/types"
-	"phoenixbuilder/io/commands"
 	"strings"
+	"sync"
 )
 
-// convert types.Module into blockNBT_depends.GeneralBlock
-func parseBlockModule(singleBlock *types.Module) (*blockNBT_depends.GeneralBlock, error) {
+// 将 types.Module 转换为 blockNBT_depends.GeneralBlock
+func parseBlockModule(singleBlock *types.Module) (blockNBT_global.GeneralBlock, error) {
 	// init var
 	got, err := mcstructure.ParseStringNBT(singleBlock.Block.BlockStates, true)
 	if err != nil {
-		return &blockNBT_depends.GeneralBlock{}, fmt.Errorf("parseBlockModule: Could not parse block states; singleBlock.Block.BlockStates = %#v", singleBlock.Block.BlockStates)
+		return blockNBT_global.GeneralBlock{}, fmt.Errorf("parseBlockModule: Could not parse block states; singleBlock.Block.BlockStates = %#v", singleBlock.Block.BlockStates)
 	}
 	blockStates, normal := got.(map[string]interface{})
 	if !normal {
-		return &blockNBT_depends.GeneralBlock{}, fmt.Errorf("parseBlockModule: Target block states is not map[string]interface{}; got = %#v", got)
+		return blockNBT_global.GeneralBlock{}, fmt.Errorf("parseBlockModule: The target block states is not map[string]interface{}; got = %#v", got)
 	}
 	// get block states
-	return &blockNBT_depends.GeneralBlock{
+	return blockNBT_global.GeneralBlock{
 		Name:   strings.Replace(strings.ToLower(strings.ReplaceAll(*singleBlock.Block.Name, " ", "")), "minecraft:", "", 1),
 		States: blockStates,
-		Pos:    [3]int32{int32(singleBlock.Point.X), int32(singleBlock.Point.Y), int32(singleBlock.Point.Z)},
 		NBT:    singleBlock.NBTMap,
-		Data:   blockNBT_depends.Datas{},
 	}, nil
 	// return
 }
 
 // 检查这个方块实体是否已被支持
 func checkIfIsEffectiveNBTBlock(blockName string) string {
-	value, ok := blockNBT_depends.SupportBlocksPool[blockName]
+	value, ok := blockNBT_global.SupportBlocksPool[blockName]
 	if ok {
 		return value
 	}
@@ -47,75 +47,66 @@ func checkIfIsEffectiveNBTBlock(blockName string) string {
 
 如果你也想参与更多方块实体的支持，可以去看看这个库 https://github.com/df-mc/dragonfly
 
-这个库也是用了 gophertunnel 的
+这个库也依然基于 gophertunnel
 */
-func placeBlockWithNBTData(pack *blockNBT_depends.Package) error {
-	var err error
-	// init var
-	switch pack.BlockInfo.Data.Type {
+func placeBlockWithNBTData(pack *blockNBT_global.BlockEntityDatas) error {
+	switch pack.Datas.Type {
 	case "CommandBlock":
-		err = CommandBlock(pack)
+		newStruct := blockNBT_CommandBlock.CommandBlock{BlockEntityDatas: pack}
+		err := newStruct.Main()
 		if err != nil {
 			return fmt.Errorf("placeBlockWithNBTData: %v", err)
 		}
 		// 命令方块
 	case "Container":
-		err = Container(pack)
+		newStruct := blockNBT_Container.Container{BlockEntityDatas: pack}
+		err := newStruct.Main()
 		if err != nil {
 			return fmt.Errorf("placeBlockWithNBTData: %v", err)
 		}
-		// 各类可被 replaceitem 生效的容器
-	default:
-		blockStates, err := mcstructure.ConvertCompoundToString(pack.BlockInfo.States, true)
+		// 各类已支持的且可被 replaceitem 生效的容器
+	case "Sign":
+		newStruct := blockNBT_Sign.Sign{BlockEntityDatas: pack}
+		err := newStruct.Main()
 		if err != nil {
-			return fmt.Errorf("placeBlockWithNBTData: Could not parse block states; pack.BlockInfo.States = %#v", pack.BlockInfo.States)
+			return fmt.Errorf("placeBlockWithNBTData: %v", err)
 		}
-		// get string of block states
-		pack.Environment.CommandSender.(*commands.CommandSender).SendDimensionalCommand(commands_generator.SetBlockRequest(&types.Module{
-			Block: &types.Block{
-				Name:        &pack.BlockInfo.Name,
-				BlockStates: blockStates,
-			},
-			Point: types.Position{
-				X: int(pack.BlockInfo.Pos[0]),
-				Y: int(pack.BlockInfo.Pos[1]),
-				Z: int(pack.BlockInfo.Pos[2]),
-			},
-		}, pack.Mainsettings))
-		// send command
+		// 告示牌
+	default:
+		err := pack.API.SetBlockFastly(pack.Datas.Position, pack.Block.Name, pack.Datas.StatesString)
+		if err != nil {
+			return fmt.Errorf("placeBlockWithNBTData: %v", err)
+		}
 		return nil
 		// 其他没有支持的方块实体
 	}
 	return nil
 }
 
+var apiIsUsing sync.Mutex
+
 // 此函数是 package blockNBT 的主函数
-func PlaceBlockWithNBTDataRun(
-	env *environment.PBEnvironment,
-	cfg *types.MainConfig,
-	isFastMode bool,
-	blockInfo *types.Module,
-) error {
-	defer blockNBT_depends.ApiIsUsing.Unlock()
-	blockNBT_depends.ApiIsUsing.Lock()
+func PlaceBlockWithNBTDataRun(api *blockNBT_API.GlobalAPI, blockInfo *types.Module, datas *blockNBT_global.Datas) error {
+	defer apiIsUsing.Unlock()
+	apiIsUsing.Lock()
 	// lock(or unlock) api
-	var err error
-	// init var
-	newRequest := blockNBT_depends.Package{
-		Environment:  env,
-		Mainsettings: cfg,
-		IsFastMode:   isFastMode,
-		BlockInfo:    &blockNBT_depends.GeneralBlock{},
-	}
-	newRequest.BlockInfo, err = parseBlockModule(blockInfo)
+	generalBlock, err := parseBlockModule(blockInfo)
 	if err != nil {
 		return fmt.Errorf("PlaceBlockWithNBTDataRun: Failed to place the entity block named %v at (%d,%d,%d), and the error log is %v", *blockInfo.Block.Name, blockInfo.Point.X, blockInfo.Point.Y, blockInfo.Point.Z, err)
 	}
-	newRequest.BlockInfo.Data.Type = checkIfIsEffectiveNBTBlock(newRequest.BlockInfo.Name)
+	// get general block
+	newRequest := blockNBT_global.BlockEntityDatas{
+		API:   api,
+		Block: generalBlock,
+		Datas: datas,
+	}
+	newRequest.Datas.StatesString = blockInfo.Block.BlockStates
+	newRequest.Datas.Position = [3]int32{int32(blockInfo.Point.X), int32(blockInfo.Point.Y), int32(blockInfo.Point.Z)}
+	newRequest.Datas.Type = checkIfIsEffectiveNBTBlock(newRequest.Block.Name)
 	// get new request of place nbt block
 	err = placeBlockWithNBTData(&newRequest)
 	if err != nil {
-		return fmt.Errorf("PlaceBlockWithNBTDataRun: Failed to place the entity block named %v at (%d,%d,%d), and the error log is %v", newRequest.BlockInfo.Name, newRequest.BlockInfo.Pos[0], newRequest.BlockInfo.Pos[1], newRequest.BlockInfo.Pos[2], err)
+		return fmt.Errorf("PlaceBlockWithNBTDataRun: Failed to place the entity block named %v at (%d,%d,%d), and the error log is %v", newRequest.Block.Name, blockInfo.Point.X, blockInfo.Point.Y, blockInfo.Point.Z, err)
 	}
 	// place block with nbt datas
 	return nil

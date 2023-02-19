@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"phoenixbuilder/bridge/bridge_fmt"
 	"phoenixbuilder/fastbuilder/bdump/blockNBT"
+	blockNBT_API "phoenixbuilder/fastbuilder/bdump/blockNBT/API"
+	blockNBT_CommandBlock "phoenixbuilder/fastbuilder/bdump/blockNBT/CommandBlock"
+	blockNBT_global "phoenixbuilder/fastbuilder/bdump/blockNBT/Global"
 	"phoenixbuilder/fastbuilder/builder"
 	"phoenixbuilder/fastbuilder/commands_generator"
 	"phoenixbuilder/fastbuilder/configuration"
@@ -12,6 +15,7 @@ import (
 	"phoenixbuilder/fastbuilder/parsing"
 	"phoenixbuilder/fastbuilder/types"
 	"phoenixbuilder/io/commands"
+	"phoenixbuilder/minecraft"
 	"runtime"
 	"runtime/debug"
 	"strings"
@@ -283,12 +287,32 @@ func CreateTask(commandLine string, env *environment.PBEnvironment) *Task {
 			}
 			blkscounter++
 			if curblock.NBTMap != nil {
-				err := blockNBT.PlaceBlockWithNBTDataRun(env, cfg, isFastMode, curblock)
+				err := blockNBT.PlaceBlockWithNBTDataRun(&blockNBT_API.GlobalAPI{
+					WritePacket: env.Connection.(*minecraft.Conn).WritePacket,
+					BotName:     env.Connection.(*minecraft.Conn).IdentityData().DisplayName,
+					BotIdentity: env.Connection.(*minecraft.Conn).IdentityData().Identity,
+				},
+					curblock,
+					&blockNBT_global.Datas{
+						Settings: cfg,
+						FastMode: isFastMode,
+						Others:   nil,
+					},
+				)
 				if err != nil {
 					pterm.Warning.Printf("%v\n", err)
 				}
 			} else if !cfg.ExcludeCommands && curblock.CommandBlockData != nil {
-				err := blockNBT.PlaceCommandBlockWithLegacyMethod(env, cfg, isFastMode, curblock)
+				newStruct := blockNBT_CommandBlock.CommandBlock{
+					BlockEntityDatas: &blockNBT_global.BlockEntityDatas{
+						API: &blockNBT_API.GlobalAPI{
+							WritePacket: env.Connection.(*minecraft.Conn).WritePacket,
+							BotName:     env.Connection.(*minecraft.Conn).IdentityData().DisplayName,
+							BotIdentity: env.Connection.(*minecraft.Conn).IdentityData().Identity,
+						},
+					},
+				}
+				err := newStruct.PlaceCommandBlockWithLegacyMethod(curblock, cfg)
 				if err != nil {
 					pterm.Warning.Printf("%v\n", err)
 				}
