@@ -247,10 +247,13 @@ if [[ ${SYSTEM_NAME} == "Linux" ]] && [[ $(${UNAME_GET_OSNAME}) == "Android" ]];
   fi
 elif [ ${MACHINE} == "ios" ]; then
   printf "\033[0;30;41m  Dev预览版不支持ios系统!  \033[0m\n"
+  quit_installer 0
 elif [ ${MACHINE} == "macos" ]; then
   printf "\033[0;30;41m  Dev预览版不支持Mac系统!  \033[0m\n"
+  quit_installer 0
 elif [[ ${SYSTEM_NAME} == "NetBSD" ]] || [[ ${SYSTEM_NAME} == "FreeBSD" ]] || [[ ${SYSTEM_NAME} == "OpenBSD" ]]; then
   printf "\033[0;30;41m  Dev预览版不支持BSD系统!  \033[0m\n"
+  quit_installer 0
 elif [[ ${SYSTEM_NAME} == "Linux" ]] && [[ $(${UNAME_GET_OSNAME}) != "Android" ]]; then
   # Finally, Linux
   echo     "NOTE: We only provide x86_64 and arm64 executables currently, if"
