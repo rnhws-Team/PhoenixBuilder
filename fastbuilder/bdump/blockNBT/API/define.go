@@ -19,7 +19,7 @@ type CommandOutput struct {
 	Lock sync.RWMutex                    // 防止并发读写而上的锁
 }
 
-var CommandRequestWaitingList CommandRequestWaiting
-var CommandOutputPool CommandOutput
+var CommandRequestWaitingList CommandRequestWaiting = CommandRequestWaiting{List: map[string]bool{}, Lock: sync.RWMutex{}}
+var CommandOutputPool CommandOutput = CommandOutput{Pool: map[string]packet.CommandOutput{}, Lock: sync.RWMutex{}}
 
 // ------------------------- end -------------------------

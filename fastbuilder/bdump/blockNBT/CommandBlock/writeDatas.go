@@ -9,7 +9,7 @@ import (
 func (c *CommandBlock) WriteDatas(needToPlaceBlock bool) error {
 	var mode uint32 = packet.CommandBlockImpulse
 	// 初始化
-	if !c.BlockEntityDatas.Datas.Settings.ExcludeCommands {
+	if c.BlockEntityDatas.Datas.Settings.ExcludeCommands {
 		err := c.BlockEntityDatas.API.SetBlockFastly(c.BlockEntityDatas.Datas.Position, c.BlockEntityDatas.Block.Name, c.BlockEntityDatas.Datas.StatesString)
 		if err != nil {
 			return fmt.Errorf("WriteDatas: %v", err)
