@@ -310,6 +310,12 @@ func CreateTask(commandLine string, env *environment.PBEnvironment) *Task {
 							BotName:     env.Connection.(*minecraft.Conn).IdentityData().DisplayName,
 							BotIdentity: env.Connection.(*minecraft.Conn).IdentityData().Identity,
 						},
+						Datas: &blockNBT_global.Datas{
+							Position: [3]int32{int32(curblock.Point.X), int32(curblock.Point.Y), int32(curblock.Point.Z)},
+							Settings: cfg,
+							FastMode: isFastMode,
+							Others:   nil,
+						},
 					},
 				}
 				err := newStruct.PlaceCommandBlockWithLegacyMethod(curblock, cfg)
