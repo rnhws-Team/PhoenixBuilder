@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"phoenixbuilder/fastbuilder/commands_generator"
 	"phoenixbuilder/fastbuilder/types"
-
-	"github.com/google/uuid"
 )
 
 // 以旧方法放置命令方块；主要用于向下兼容，如 operation 36 等
@@ -30,18 +28,8 @@ func (c *CommandBlock) PlaceCommandBlockWithLegacyMethod(block *types.Module, cf
 	}
 	// 如果是 operation 26 - SetCommandBlockData
 	request := commands_generator.SetBlockRequest(block, cfg)
-	// 取得 setblock 命令
 	if c.BlockEntityDatas.Datas.FastMode {
-		var uniqueId uuid.UUID
-		var err error
-		for {
-			uniqueId, err = uuid.NewUUID()
-			if err != nil || uniqueId == uuid.Nil {
-				continue
-			}
-			break
-		}
-		err = c.BlockEntityDatas.API.SendWSCommand(request, uniqueId)
+		err := c.BlockEntityDatas.API.SendSettingsCommand(request, true)
 		if err != nil {
 			return fmt.Errorf("PlaceCommandBlockWithLegacyMethod: %v", err)
 		}
@@ -51,7 +39,7 @@ func (c *CommandBlock) PlaceCommandBlockWithLegacyMethod(block *types.Module, cf
 			return fmt.Errorf("PlaceCommandBlockWithLegacyMethod: %v", err)
 		}
 	}
-	// 其他情况下放置命令方块
+	// 放置命令方块
 	err := c.WriteDatas(false)
 	if err != nil {
 		return fmt.Errorf("PlaceCommandBlockWithLegacyMethod: %v", err)
