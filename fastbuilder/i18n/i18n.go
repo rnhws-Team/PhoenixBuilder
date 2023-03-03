@@ -18,6 +18,7 @@ const (
 	LanguageJapanese           = "ja_JP"
 	LanguageRussia             = "ru_RU"
 	LanguageEsperanto          = "epo"
+
 )
 
 var SelectedLanguage = LanguageEnglish_US
@@ -182,6 +183,7 @@ var LangDict map[string]map[uint16]string = map[string]map[uint16]string{
 	LanguageJapanese:           I18nDict_ja_JP,
 	LanguageRussia:             I18nDict_ru_RU,
 	LanguageEsperanto:          I18nDict_epo,
+
 }
 
 var I18nDict map[uint16]string
