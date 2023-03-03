@@ -16,6 +16,7 @@ const (
 	LanguageTraditionalChinese = "zh_HK"
 	LanguageTaiwanChinese      = "zh_TW"
 	LanguageJapanese           = "ja_JP"
+	LanguageRussia             = "ru_RU"
 	LanguageEsperanto          = "epo"
 )
 
@@ -179,6 +180,7 @@ var LangDict map[string]map[uint16]string = map[string]map[uint16]string{
 	LanguageTraditionalChinese: I18nDict_zh_HK,
 	LanguageTaiwanChinese:      I18nDict_zh_TW,
 	LanguageJapanese:           I18nDict_ja_JP,
+	LanguageRussia:             I18nDict_ru_RU,
 	LanguageEsperanto:          I18nDict_epo,
 }
 
