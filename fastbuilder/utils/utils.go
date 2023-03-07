@@ -67,5 +67,5 @@ func CheckUpdate(currentVersion string) (bool, string) {
 		fmt.Printf("Unknown error occured while checking the update\n")
 		return false, ""
 	}
-	return C.compareVersion(C.CString(version[1:]),C.CString(currentVersion))!=0, version[1:]
+	return C.compareVersion(C.CString(version[3:]),C.CString(currentVersion))!=0, version[3:]
 }
