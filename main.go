@@ -36,7 +36,7 @@ func main() {
 
 	I18n.Init()
 
-	pterm.DefaultBox.Println(pterm.LightCyan("https://github.com/RainyHallways/PhoenixBuilder"))
+	pterm.DefaultBox.Println(pterm.LightCyan("https://github.com/rnhws-Team/PhoenixBuilder"))
 	pterm.Println(pterm.Yellow("PhoenixBuilder Dev" + args.GetFBVersion()))
         pterm.Println(pterm.Red("注意: 此版本为第三方预览版本，请勿用于实际生产用途！！！"))
 	// iSH.app specific, for foreground ability
