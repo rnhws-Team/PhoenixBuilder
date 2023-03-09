@@ -4,8 +4,15 @@ import (
 	"phoenixbuilder/minecraft/protocol"
 	"phoenixbuilder/minecraft/protocol/packet"
 	"sync"
+
+	"github.com/google/uuid"
 )
 
+type PacketHandleResult struct {
+	commandRequestWithResponce CommandRequest
+}
+
+/*
 // 存放数据包的处理结果；理论上，这些结果应该由此结构体的 HandlePacket 方法实时更新
 type PacketHandleResult struct {
 	commandRequest            map[string]*CommandRequest // 存放命令请求及结果；此参数不对外公开
@@ -21,17 +28,27 @@ type PacketHandleResult struct {
 	ContainerOpenDatas  ContainerOpen  // 存放容器的打开状态及相应的数据
 	ContainerCloseDatas ContainerClose // 存放容器的关闭结果及相应的数据
 }
+*/
 
 // 存放命令请求及结果
 type CommandRequest struct {
-	LockDown sync.Mutex           // 如果命令请求已被发出，此参数将被锁定且对应的 go 协程进入阻塞态。当命令请求得到反馈时，由对应的函数解除此参数的锁定，相应的 go 协程从阻塞变为非阻塞，然后返回值
-	Responce packet.CommandOutput // 当命令请求得到反馈时此参数将被赋值
+	commandRequest struct {
+		lockDown sync.RWMutex
+		datas    map[uuid.UUID]*sync.Mutex
+	}
+	commandResponce struct {
+		lockDown sync.RWMutex
+		datas    map[uuid.UUID]packet.CommandOutput
+	}
 }
 
 // uint32 代表打开的窗口 ID ，即 WindowID；
 // uint8 代表槽位；
 // 最内层的 protocol.ItemInstance 代表对应的 WindowID 库存中相应槽位的物品数据。
-type InventoryContents map[uint32]map[uint8]protocol.ItemInstance
+type InventoryContents struct {
+	lockDown          sync.RWMutex
+	inventoryContents map[uint32]map[uint8]protocol.ItemInstance
+}
 
 // 存放物品更改请求及结果
 type ItemStackReuqestWithAns struct {
