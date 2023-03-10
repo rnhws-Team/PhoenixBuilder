@@ -38,7 +38,8 @@ func (g *GlobalAPI) OpenContainer(
 }
 
 /*
-关闭已经打开的容器；如果容器已被关闭，则返回的布尔值为 false；只有当容器被关闭后才会返回值
+关闭已经打开的容器；如果容器已被关闭，则返回的布尔值为 false；只有当容器被关闭后才会返回值。
+此函数并不会检查此前是否已经打开过容器，因此您需要确保关闭容器前已经打开了一个容器，否则可能会造成潜在的问题
 */
 func (g *GlobalAPI) CloseContainer() (bool, error) {
 	defer g.PacketHandleResult.ContainerResources.release()
