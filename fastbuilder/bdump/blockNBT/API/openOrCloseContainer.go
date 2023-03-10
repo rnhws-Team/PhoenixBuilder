@@ -9,7 +9,9 @@ import (
 /*
 打开 pos 处名为 blockName 且方块状态为 blockStates 的容器，且只有当打开完成后才会返回值。
 当 needOccupyContainerResources 为真时，此函数会主动占用容器资源，但一般情况下我建议此参数填 false ，
-因为打开容器仅仅是一系列容器操作的一个步骤，因此此函数中不应该贸然修改容器资源，否则可能会造成潜在的问题
+因为打开容器仅仅是一系列容器操作的一个步骤，因此此函数中不应该贸然修改容器资源，否则可能会造成潜在的问题。
+除此外，此函数并不会检查此前是否已经打开过容器，因此您需要确保打开容器前从未打开容器或已关闭了上次打开的容器，
+否则这可能会造成潜在的问题
 */
 func (g *GlobalAPI) OpenContainer(
 	pos [3]int32,
@@ -38,10 +40,11 @@ func (g *GlobalAPI) OpenContainer(
 }
 
 /*
-关闭已经打开的容器；如果容器已被关闭，则返回的布尔值为 false；只有当容器被关闭后才会返回值。
+关闭已经打开的容器，且只有当容器被关闭后才会返回值。当容器被成功关闭，公用容器资源会被强制释放，
+因为关闭容器宣告着一系列的容器操作的结束。
 此函数并不会检查此前是否已经打开过容器，因此您需要确保关闭容器前已经打开了一个容器，否则可能会造成潜在的问题
 */
-func (g *GlobalAPI) CloseContainer() (bool, error) {
+func (g *GlobalAPI) CloseContainer() error {
 	defer g.PacketHandleResult.ContainerResources.release()
 	// release sharing resources
 	err := g.WritePacket(&packet.ContainerClose{
@@ -49,11 +52,11 @@ func (g *GlobalAPI) CloseContainer() (bool, error) {
 		ServerSide: false,
 	})
 	if err != nil {
-		return false, fmt.Errorf("CloseContainer: %v", err)
+		return fmt.Errorf("CloseContainer: %v", err)
 	}
 	// close container
 	g.PacketHandleResult.ContainerResources.AwaitResponce()
 	// wait changes
-	return true, nil
+	return nil
 	// return
 }
