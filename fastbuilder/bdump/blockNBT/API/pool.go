@@ -66,7 +66,7 @@ type itemStackReuqestWithResponce struct {
 		客户端在发送 ItemStackRequest 时需要发送一个 RequestID 。
 		经过观察，这个值会随着请求发送的次数递减，且呈现为公差为 -2，首项为 -1 的递减型等差数列。
 		特别地，如果你尝试在 RequestID 字段填写非负数或者偶数，那么客户端会被租赁服强制断开连接。
-		尽管始终为 ItemStackRequest 的 RequestID 字段发送 -1 并不会造成造成断开连接的发送，
+		尽管始终为 ItemStackRequest 的 RequestID 字段填写 -1 并不会造成造成断开连接的发生，
 		但这样并不能保证物品操作的唯一性。
 		因此，为了安全性，请使用本结构体下的相关实现构造物品操作的发起函数，否则可能会造成潜在的问题。
 		其他：本结构体的相关实现在修改这个值时，将会以原子操作修改
