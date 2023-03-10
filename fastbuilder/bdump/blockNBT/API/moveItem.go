@@ -4,94 +4,69 @@ import (
 	"fmt"
 	"phoenixbuilder/minecraft/protocol"
 	"phoenixbuilder/minecraft/protocol/packet"
-	"sync"
-	"sync/atomic"
 )
 
 // 向租赁服发送 ItemStackReuqest 并获取返回值
-func (g *GlobalAPI) SendItemStackRequestWithResponce(request *packet.ItemStackRequest) ([]*ItemStackReuqestWithAns, error) {
+func (g *GlobalAPI) SendItemStackRequestWithResponce(request *packet.ItemStackRequest) ([]protocol.ItemStackResponse, error) {
 	requestIDList := []int32{}
-	waitingList := []*ItemStackReuqestWithAns{}
+	ans := []protocol.ItemStackResponse{}
 	// 初始化
 	for range request.Requests {
-		requestIDList = append(requestIDList, atomic.AddInt32(&g.PacketHandleResult.ItemStackRequestID, -2))
+		requestIDList = append(requestIDList, g.PacketHandleResult.ItemStackOperation.GetNewRequestID())
 	}
 	for key := range request.Requests {
-		request.Requests[key].RequestID = requestIDList[key]
+		requestID := requestIDList[key]
+		request.Requests[key].RequestID = requestID
+		g.PacketHandleResult.ItemStackOperation.WriteRequest(requestID)
 	}
-	// 重新设定每个请求的请求 ID
-	g.PacketHandleResult.ItemStackReuqestWithResultMapLockDown.Lock()
-
-	for _, value := range requestIDList {
-		g.PacketHandleResult.ItemStackReuqestWithResult[value] = &ItemStackReuqestWithAns{
-			LockDown:      sync.Mutex{},
-			SuccessStates: false,
-			ErrorCode:     0,
-		}
-		g.PacketHandleResult.ItemStackReuqestWithResult[value].LockDown.Lock()
-		waitingList = append(waitingList, g.PacketHandleResult.ItemStackReuqestWithResult[value])
-	}
-
-	g.PacketHandleResult.ItemStackReuqestWithResultMapLockDown.Unlock()
-	// 写入请求到等待队列
+	// 重新设定每个请求的请求 ID 并写入请求到等待队列
 	err := g.WritePacket(request)
 	if err != nil {
 		return nil, fmt.Errorf("SendItemStackRequestWithResponce: %v", err)
 	}
 	// 发送物品操作请求
-	for _, value := range waitingList {
-		value.LockDown.Lock()
-		value.LockDown.Unlock()
-	}
-	// 等待租赁服回应所有物品操作请求
-	g.PacketHandleResult.ItemStackReuqestWithResultMapLockDown.Lock()
-
 	for _, value := range requestIDList {
-		delete(g.PacketHandleResult.ItemStackReuqestWithResult, value)
+		g.PacketHandleResult.ItemStackOperation.AwaitResponce(value)
+		got, err := g.PacketHandleResult.ItemStackOperation.LoadResponceAndDelete(value)
+		if err != nil {
+			return nil, fmt.Errorf("SendItemStackRequestWithResponce: %v", err)
+		}
+		ans = append(ans, got)
 	}
-	newMap := map[int32]*ItemStackReuqestWithAns{}
-	for key, value := range g.PacketHandleResult.ItemStackReuqestWithResult {
-		newMap[key] = value
-	}
-	g.PacketHandleResult.ItemStackReuqestWithResult = newMap
-
-	g.PacketHandleResult.ItemStackReuqestWithResultMapLockDown.Unlock()
-	// 将已完成的请求释放(移除请求)
-	return waitingList, nil
+	// 等待租赁服回应所有物品操作请求。同时，每当一个请求被响应，就把对应的结果保存下来
+	return ans, nil
 	// 返回值
 }
 
 /*
-将背包中槽位为 inventorySlot 的物品移动到已打开容器的第 containerSlot 槽位，且只移动 moveCount 个物品
-
-此函数将 containerSlot 处的物品当作空气处理。如果涉及到交换物品等操作，或许您需要使用其他函数
+将背包中槽位为 inventorySlot 的物品移动到已打开容器的第 containerSlot 槽位，且只移动 moveCount 个物品。
+此函数将 containerSlot 处的物品当作空气处理。如果涉及到交换物品等操作，或许您需要使用其他函数。
+当且仅当物品操作得到租赁服的响应后，此函数才会返回值
 */
 func (g *GlobalAPI) PlaceItemIntoContainer(
 	inventorySlot uint8,
 	containerSlot uint8,
 	moveCount uint8,
 ) error {
-	datas, _ := g.GetInventoryCotent(0)
-	// 取得 Window ID 为 0 的库存数据，也就是取得背包的库存数据
-	got, ok := datas[inventorySlot]
-	if !ok {
-		return fmt.Errorf("PlaceItemIntoContainer: %v is not in inventory contents; datas = %#v", inventorySlot, datas)
+	datas, err := g.PacketHandleResult.Inventory.GetItemStackInfo(0, inventorySlot)
+	if err != nil {
+		return fmt.Errorf("PlaceItemIntoContainer: %v", err)
 	}
-	// 取得“来源”的物品信息
+	// 取得背包中指定物品栏的物品数据
 	placeStackRequestAction := protocol.PlaceStackRequestAction{}
-	if moveCount <= uint8(got.Stack.Count) {
+	if moveCount <= uint8(datas.Stack.Count) {
 		placeStackRequestAction.Count = moveCount
 	} else {
-		placeStackRequestAction.Count = uint8(got.Stack.Count)
+		placeStackRequestAction.Count = uint8(datas.Stack.Count)
 	}
 	// 得到欲移动的物品数量
 	placeStackRequestAction.Source = protocol.StackRequestSlotInfo{
 		ContainerID:    12,
 		Slot:           inventorySlot,
-		StackNetworkID: got.StackNetworkID,
+		StackNetworkID: datas.StackNetworkID,
 	}
 	placeStackRequestAction.Destination = protocol.StackRequestSlotInfo{
-		ContainerID:    g.PacketHandleResult.ContainerOpenDatas.Datas.ContainerType,
+		ContainerID:    g.PacketHandleResult.ContainerResources.GetContainerOpenDatas().ContainerType,
 		Slot:           containerSlot,
 		StackNetworkID: 0,
 	}
@@ -110,8 +85,8 @@ func (g *GlobalAPI) PlaceItemIntoContainer(
 		return fmt.Errorf("PlaceItemIntoContainer: %v", err)
 	}
 	// 发送物品操作请求
-	if ans[0].SuccessStates == false {
-		return fmt.Errorf("PlaceItemIntoContainer: Operation is canceled, and the errorCode(status) is %v; inventorySlot = %v, containerSlot = %v, moveCount = %v", ans[0].ErrorCode, inventorySlot, containerSlot, moveCount)
+	if ans[0].Status != 0 {
+		return fmt.Errorf("PlaceItemIntoContainer: Operation %v is canceled, and the errorCode(status) is %v; inventorySlot = %v, containerSlot = %v, moveCount = %v", ans[0].RequestID, ans[0].Status, inventorySlot, containerSlot, moveCount)
 	}
 	// 当操作失败时
 	return nil

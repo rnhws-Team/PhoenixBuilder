@@ -64,43 +64,46 @@ func (o *PickBlock) blockPick(x, y, z int32) {
 }
 
 func (o *PickBlock) throwItem() bool {
-	// 刷新背包数据(等待更改)
 	_, err := o.apis.SendWSCommandWithResponce("list")
 	if err != nil {
 		panic(fmt.Sprintf("throwItem: %v", err))
 	}
-	// 尝试丢出快捷栏第一位的物品
-	inventoryDatas, _ := o.apis.GetInventoryCotent(0)
-	if len(inventoryDatas) > 0 {
-		if ii := inventoryDatas[0]; ii.Stack.Count > 0 {
-			ans, err := o.apis.SendItemStackRequestWithResponce(&packet.ItemStackRequest{
-				Requests: []protocol.ItemStackRequest{
-					{
-						Actions: []protocol.StackRequestAction{
-							&protocol.DropStackRequestAction{
-								Count: byte(ii.Stack.Count),
-								Source: protocol.StackRequestSlotInfo{
-									ContainerID:    28,
-									Slot:           0,
-									StackNetworkID: ii.StackNetworkID,
-								},
-								Randomly: false,
+	// 刷新背包数据(等待更改)
+	datas, err := o.apis.PacketHandleResult.Inventory.GetItemStackInfo(0, 0)
+	if err != nil {
+		return false
+	}
+	// 取得快捷栏 0 的物品数据
+	if datas.Stack.Count > 0 {
+		ans, err := o.apis.SendItemStackRequestWithResponce(&packet.ItemStackRequest{
+			Requests: []protocol.ItemStackRequest{
+				{
+					Actions: []protocol.StackRequestAction{
+						&protocol.DropStackRequestAction{
+							Count: byte(datas.Stack.Count),
+							Source: protocol.StackRequestSlotInfo{
+								ContainerID:    28,
+								Slot:           0,
+								StackNetworkID: datas.StackNetworkID,
 							},
+							Randomly: false,
 						},
 					},
 				},
-			})
-			// 返回值
-			if err != nil {
-				panic(fmt.Sprintf("throwItem: %v", err))
-			}
-			if ans[0].SuccessStates {
-				return true
-			}
+			},
+		})
+		if err != nil {
+			return false
 		}
+		// 发送数据包
+		if ans[0].Status == 0 {
+			return true
+		}
+		// 返回值
 	}
-	// 返回值
+	// 尝试丢出物品
 	return false
+	// 返回值
 }
 
 func (o *PickBlock) onInvoke(chat *defines.GameChat) bool {

@@ -8,10 +8,8 @@ import (
 )
 
 /*
-让客户端点击 pos 处名为 blockName 且方块状态为 blockStates 的方块
-
-如果 needWaiting 为真，则会等待点击完成后再返回值
-
+让客户端点击 pos 处名为 blockName 且方块状态为 blockStates 的方块。
+如果 needWaiting 为真，则会等待点击完成后再返回值。
 你可以对容器使用这样的操作，这会使得容器被打开
 */
 func (g *GlobalAPI) UseItemOnBlocks(
@@ -35,13 +33,11 @@ func (g *GlobalAPI) UseItemOnBlocks(
 		return fmt.Errorf("UseItemOnBlocks: %v", err)
 	}
 	// change selected hotbar slot
-	datas, _ := g.GetInventoryCotent(0)
-	// get item contents of window 0
-	got, ok := datas[hotBarSlotID]
-	if !ok {
-		return fmt.Errorf("UseItemOnBlocks: %v is not in inventory contents; datas = %#v", hotBarSlotID, datas)
+	datas, err := g.PacketHandleResult.Inventory.GetItemStackInfo(0, hotBarSlotID)
+	if err != nil {
+		return fmt.Errorf("UseItemOnBlocks: %v", err)
 	}
-	// get target item datas
+	// get datas of the target item stack
 	err = g.WritePacket(&packet.InventoryTransaction{
 		LegacyRequestID:    0,
 		LegacySetItemSlots: []protocol.LegacySetItemSlot(nil),
@@ -54,7 +50,7 @@ func (g *GlobalAPI) UseItemOnBlocks(
 			BlockPosition:      pos,
 			BlockFace:          0,
 			HotBarSlot:         int32(hotBarSlotID),
-			HeldItem:           got,
+			HeldItem:           datas,
 			BlockRuntimeID:     blockRuntimeID,
 		},
 	})

@@ -9,12 +9,10 @@ import (
 // 切换客户端的手持物品栏为 hotBarSlotID；如果 needWaiting 为真，则会等待物品栏切换完成后再返回值
 func (g *GlobalAPI) ChangeSelectedHotbarSlot(hotBarSlotID uint8, needWaiting bool) error {
 	var got protocol.ItemInstance = protocol.ItemInstance{}
-	var ok bool = false
 	// init var
-	datas, _ := g.GetInventoryCotent(0)
+	datas, err := g.PacketHandleResult.Inventory.GetItemStackInfo(0, 0)
 	// get item contents of window 0
-	got, ok = datas[hotBarSlotID]
-	if !ok {
+	if err != nil {
 		got = protocol.ItemInstance{
 			StackNetworkID: 0,
 			Stack: protocol.ItemStack{
@@ -30,9 +28,11 @@ func (g *GlobalAPI) ChangeSelectedHotbarSlot(hotBarSlotID uint8, needWaiting boo
 				HasNetworkID:   false,
 			},
 		}
+	} else {
+		got = datas
 	}
 	// get target item datas
-	err := g.WritePacket(&packet.MobEquipment{
+	err = g.WritePacket(&packet.MobEquipment{
 		EntityRuntimeID: g.BotRunTimeID,
 		NewItem:         got,
 		InventorySlot:   hotBarSlotID,
