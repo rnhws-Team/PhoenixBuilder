@@ -30,7 +30,7 @@ type Omega struct {
 	storageRoot string
 
 	uqHolder    *uqHolder.UQHolder
-	UqHolderNew *blockNBT_API.PacketHandleResult
+	NewUQHolder *blockNBT_API.PacketHandleResult // for blockNBT
 	ctx         map[string]interface{}
 
 	backendLogger    defines.LineDst
@@ -89,7 +89,7 @@ func (o *Omega) GetUQHolder() *uqHolder.UQHolder {
 }
 
 func (o *Omega) GetNewUQHolder() *blockNBT_API.PacketHandleResult {
-	return o.UqHolderNew
+	return o.NewUQHolder
 }
 
 func (o *Omega) GetWorldsDir(elem ...string) string {

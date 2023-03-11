@@ -102,7 +102,7 @@ func EnableOmegaSystem(env *environment.PBEnvironment) (*EmbeddedAdaptor, func()
 	}
 
 	omega := mainframe.NewOmega()
-	omega.UqHolderNew = env.UQHolderNew.(*blockNBT_API.PacketHandleResult)
+	omega.NewUQHolder = env.NewUQHolder.(*blockNBT_API.PacketHandleResult)
 	omega.Bootstrap(ea)
 	env.OmegaHolder = omega
 	env.OmegaAdaptorHolder = ea
