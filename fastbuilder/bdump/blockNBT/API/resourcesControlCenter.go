@@ -411,7 +411,7 @@ func (c *container) AwaitResponceAfterSendPacket() {
 	c.awaitChanges.Unlock()
 }
 
-// 释放 c.awaitChanges 中关于容器操作的互斥锁。如果互斥锁未被锁定，程序也仍不会发生惊慌
+// 释放 c.awaitChanges 中关于容器操作的互斥锁。如果互斥锁未被锁定，程序也仍不会发生惊慌。
 // 当且仅当租赁服确认客户端的容器操作时，此函数才会被调用。
 // 属于私有实现
 func (c *container) releaseAwaitGoRoutine() {
