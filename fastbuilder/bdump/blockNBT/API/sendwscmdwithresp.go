@@ -17,23 +17,23 @@ func (g *GlobalAPI) SendWSCommandWithResponce(command string) (packet.CommandOut
 		}
 		return resp, nil
 	}
-	uniqueIdString := uniqueId.String()
-	// 初始化
-	CommandRequest.Store(uniqueIdString, uint8(0))
+	err = g.PacketHandleResult.commandDatas.writeRequest(uniqueId)
+	if err != nil {
+		return packet.CommandOutput{}, fmt.Errorf("SendWSCommandWithResponce: %v", err)
+	}
 	// 写入请求到等待队列
 	err = g.SendWSCommand(command, uniqueId)
 	if err != nil {
 		return packet.CommandOutput{}, fmt.Errorf("SendWSCommandWithResponce: %v", err)
 	}
 	// 发送命令
-	for {
-		got, success := CommandResponce.LoadAndDelete(uniqueIdString)
-		if success {
-			val, normal := got.(packet.CommandOutput)
-			if !normal {
-				return packet.CommandOutput{}, fmt.Errorf("SendWSCommandWithResponce: Responce %#v is not a packet.CommandOutput struct", got)
-			}
-			return val, nil
-		}
+	g.PacketHandleResult.commandDatas.awaitResponce(uniqueId)
+	// 等待租赁服响应命令请求
+	ans, err := g.PacketHandleResult.commandDatas.loadResponceAndDelete(uniqueId)
+	if err != nil {
+		return packet.CommandOutput{}, fmt.Errorf("SendWSCommandWithResponce: %v", err)
 	}
+	// 取得命令请求的返回值
+	return ans, nil
+	// 返回值
 }

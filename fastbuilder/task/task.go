@@ -166,6 +166,16 @@ func CreateTask(commandLine string, env *environment.PBEnvironment) *Task {
 	}
 	fcfg := configuration.ConcatFullConfig(cfg, configuration.GlobalFullConfig(env).Delay())
 	dcfg := fcfg.Delay()
+
+	bdump_blockNBT_API := &blockNBT_API.GlobalAPI{
+		WritePacket:        env.Connection.(*minecraft.Conn).WritePacket,
+		BotName:            env.Connection.(*minecraft.Conn).IdentityData().DisplayName,
+		BotIdentity:        env.Connection.(*minecraft.Conn).IdentityData().Identity,
+		BotRunTimeID:       env.Connection.(*minecraft.Conn).GameData().EntityRuntimeID,
+		BotUniqueID:        env.Connection.(*minecraft.Conn).GameData().EntityUniqueID,
+		PacketHandleResult: env.NewUQHolder.(*blockNBT_API.PacketHandleResult),
+	}
+
 	und, _ := uuid.NewUUID()
 	cmdsender.SendWSCommand("gamemode c", und)
 	blockschannel := make(chan *types.Module, 10240)
@@ -281,17 +291,12 @@ func CreateTask(commandLine string, env *environment.PBEnvironment) *Task {
 				return
 			}
 			if blkscounter%20 == 0 {
-				u_d, _ := uuid.NewUUID()
-				cmdsender.SendWSCommand(fmt.Sprintf("tp %d %d %d", curblock.Point.X, curblock.Point.Y, curblock.Point.Z), u_d)
-				// SettingsCommand is unable to teleport the player.
+				cmdsender.SendDimensionalCommand(fmt.Sprintf("tp %d %d %d", curblock.Point.X, curblock.Point.Y, curblock.Point.Z))
 			}
 			blkscounter++
 			if curblock.NBTMap != nil {
-				err := blockNBT.PlaceBlockWithNBTDataRun(&blockNBT_API.GlobalAPI{
-					WritePacket: env.Connection.(*minecraft.Conn).WritePacket,
-					BotName:     env.Connection.(*minecraft.Conn).IdentityData().DisplayName,
-					BotIdentity: env.Connection.(*minecraft.Conn).IdentityData().Identity,
-				},
+				err := blockNBT.PlaceBlockWithNBTDataRun(
+					bdump_blockNBT_API,
 					curblock,
 					&blockNBT_global.Datas{
 						Settings: cfg,
@@ -305,11 +310,7 @@ func CreateTask(commandLine string, env *environment.PBEnvironment) *Task {
 			} else if !cfg.ExcludeCommands && curblock.CommandBlockData != nil {
 				newStruct := blockNBT_CommandBlock.CommandBlock{
 					BlockEntityDatas: &blockNBT_global.BlockEntityDatas{
-						API: &blockNBT_API.GlobalAPI{
-							WritePacket: env.Connection.(*minecraft.Conn).WritePacket,
-							BotName:     env.Connection.(*minecraft.Conn).IdentityData().DisplayName,
-							BotIdentity: env.Connection.(*minecraft.Conn).IdentityData().Identity,
-						},
+						API: bdump_blockNBT_API,
 						Datas: &blockNBT_global.Datas{
 							Position: [3]int32{int32(curblock.Point.X), int32(curblock.Point.Y), int32(curblock.Point.Z)},
 							Settings: cfg,
