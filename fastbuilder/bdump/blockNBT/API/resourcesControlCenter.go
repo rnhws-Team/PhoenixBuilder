@@ -235,7 +235,8 @@ func (i *inventoryContents) deleteInventory(windowID uint32) error {
 
 // ------------------------- itemStackReuqestWithResponce -------------------------
 
-// 测定 key 是否在 i.itemStackRequest.datas 中。如果存在，那么返回真，否则返回假
+// 测定请求 ID 为 key 的物品操作请求是否在 i.itemStackRequest.datas 中。
+// 如果存在，那么返回真，否则返回假
 func (i *itemStackReuqestWithResponce) TestRequest(key int32) bool {
 	i.itemStackRequest.lockDown.RLock()
 	defer i.itemStackRequest.lockDown.RUnlock()
@@ -245,7 +246,8 @@ func (i *itemStackReuqestWithResponce) TestRequest(key int32) bool {
 	// return
 }
 
-// 测定 key 是否在 i.itemStackResponce.datas 中。如果存在，那么返回真，否则返回假
+// 测定请求 ID 为 key 的物品操作请求 key 是否在 i.itemStackResponce.datas 中。
+// 如果存在，那么返回真，否则返回假
 func (i *itemStackReuqestWithResponce) TestResponce(key int32) bool {
 	i.itemStackResponce.lockDown.RLock()
 	defer i.itemStackResponce.lockDown.RUnlock()
@@ -255,7 +257,7 @@ func (i *itemStackReuqestWithResponce) TestResponce(key int32) bool {
 	// return
 }
 
-// 将名为 key 的物品操作请求放入 i.itemStackRequest.datas 并占用(锁定)此请求对应的互斥锁
+// 将请求 ID 为 key 的物品操作请求放入 i.itemStackRequest.datas 并占用(锁定)此请求对应的互斥锁
 func (i *itemStackReuqestWithResponce) WriteRequest(key int32) error {
 	if i.TestRequest(key) {
 		return fmt.Errorf("WriteRequest: %v is already exist in i.itemStackRequest.datas", key)
@@ -272,7 +274,7 @@ func (i *itemStackReuqestWithResponce) WriteRequest(key int32) error {
 	// return
 }
 
-// 将名为 key 的物品操作请求从 i.itemStackRequest.datas 中移除并释放此请求对应的互斥锁
+// 将请求 ID 为 key 的物品操作请求从 i.itemStackRequest.datas 中移除并释放此请求对应的互斥锁
 func (i *itemStackReuqestWithResponce) DeleteRequest(key int32) error {
 	if !i.TestRequest(key) {
 		return fmt.Errorf("DeleteRequest: %v is not recorded in i.itemStackRequest.datas", key)
@@ -297,7 +299,8 @@ func (i *itemStackReuqestWithResponce) DeleteRequest(key int32) error {
 	// return
 }
 
-// 将物品操作请求的返回值写入 i.itemStackResponce.datas 并释放 i.itemStackRequest.datas 中对应的互斥锁，属于私有实现
+// 将请求 ID 为 key 的物品操作请求的返回值写入 i.itemStackResponce.datas
+// 并释放 i.itemStackRequest.datas 中对应的互斥锁，属于私有实现
 func (i *itemStackReuqestWithResponce) writeResponce(key int32, resp protocol.ItemStackResponse) error {
 	i.itemStackResponce.lockDown.Lock()
 	defer i.itemStackResponce.lockDown.Unlock()
@@ -313,7 +316,8 @@ func (i *itemStackReuqestWithResponce) writeResponce(key int32, resp protocol.It
 	// return
 }
 
-// 从 i.itemStackResponce.datas 读取名为 key 的物品操作请求的返回值并将此返回值从 i.itemStackResponce.datas 移除
+// 从 i.itemStackResponce.datas 读取请求 ID 为 key 的物品操作请求的返回值
+// 并将此返回值从 i.itemStackResponce.datas 移除
 func (i *itemStackReuqestWithResponce) LoadResponceAndDelete(key int32) (protocol.ItemStackResponse, error) {
 	if !i.TestResponce(key) {
 		return protocol.ItemStackResponse{}, fmt.Errorf("LoadResponceAndDelete: %v is not recorded in i.itemStackResponce.datas", key)
@@ -334,7 +338,8 @@ func (i *itemStackReuqestWithResponce) LoadResponceAndDelete(key int32) (protoco
 	// return
 }
 
-// 等待租赁服响应物品操作请求 key 。在调用此函数后，会持续阻塞直到此物品操作请求所对应的互斥锁被释放
+// 等待租赁服响应请求 ID 为 key 的物品操作请求。
+// 在调用此函数后，会持续阻塞直到此物品操作请求所对应的互斥锁被释放
 func (i *itemStackReuqestWithResponce) AwaitResponce(key int32) {
 	if !i.TestRequest(key) {
 		return
@@ -351,12 +356,13 @@ func (i *itemStackReuqestWithResponce) AwaitResponce(key int32) {
 	// await responce
 }
 
-// 以原子操作返回当前的 requestID
+// 以原子操作获取上一次的请求 ID ，也就是 RequestID 。
+// 如果从未进行过物品操作，则将会返回 1
 func (i *itemStackReuqestWithResponce) GetCurrentRequestID() int32 {
 	return atomic.LoadInt32(&i.requestID)
 }
 
-// 以原子操作获取一个唯一的 requestID
+// 以原子操作获取一个唯一的请求 ID ，也就是 RequestID
 func (i *itemStackReuqestWithResponce) GetNewRequestID() int32 {
 	return atomic.AddInt32(&i.requestID, -2)
 }
