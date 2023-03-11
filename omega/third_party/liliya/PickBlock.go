@@ -124,6 +124,9 @@ func (o *PickBlock) onInvoke(chat *defines.GameChat) bool {
 		respString := resp.OutputMessages[0].Parameters[0]
 		var respList []interface{}
 		json.Unmarshal([]byte(respString), &respList)
+		if len(respList) <= 0 {
+			return
+		}
 		respMap := respList[0].(map[string]interface{})
 		x, y, z := int32(math.Floor(respMap["position"].(map[string]interface{})["x"].(float64))), int32(math.Floor(respMap["position"].(map[string]interface{})["y"].(float64)))-2, int32(math.Floor(float64(respMap["position"].(map[string]interface{})["z"].(float64))))
 		// 尝试Pick方块
