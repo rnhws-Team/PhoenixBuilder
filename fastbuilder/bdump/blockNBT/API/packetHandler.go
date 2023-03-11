@@ -37,7 +37,7 @@ func (o *PacketHandleResult) HandlePacket(pk *packet.Packet) {
 		for _, value := range p.Responses {
 			err := o.ItemStackOperation.writeResponce(value.RequestID, value)
 			if err != nil {
-				panic("HandlePacket: Attempt to send packet ItemStackRequest without using Bdump/blockNBT API")
+				panic("HandlePacket: Attempt to send packet.ItemStackRequest without using Bdump/blockNBT API")
 			}
 		}
 		// item stack request
