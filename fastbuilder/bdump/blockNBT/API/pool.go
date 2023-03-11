@@ -23,7 +23,7 @@ type PacketHandleResult struct {
 	commandDatas       commandRequestWithResponce   // 命令请求队列及命令返回值；此实现及内部所有实现不予公开
 	Inventory          inventoryContents            // 存放所有有效库存中的物品数据，例如背包和盔甲栏；此实现不公开但可以通过公开的函数实现对数据的访问
 	ItemStackOperation itemStackReuqestWithResponce // 存放物品更改请求及结果；此实现不公开但可以通过公开的函数实现对数据的访问和修改
-	ContainerResources container                    // 描述容器公用资源的占用状态并同时存放容器的打开(关闭)状态及打开数据；此实现不公开但可以通过公开的函数实现对资源的访问、占用和释放
+	ContainerResources container                    // 描述容器公用资源的占用状态并同时存放容器的打开(关闭)状态及打开(关闭)数据；此实现不公开但可以通过公开的函数实现对资源的访问、占用和释放
 }
 
 // 存放命令请求及结果
@@ -76,7 +76,7 @@ type itemStackReuqestWithResponce struct {
 }
 
 /*
-描述容器公用资源的占用状态并同时存放容器的打开(关闭)状态及打开数据；
+描述容器公用资源的占用状态并同时存放容器的打开(关闭)状态及打开(关闭)数据；
 此实现不公开但可以通过公开的函数实现对资源的访问、占用和释放。
 重要：
 容器由于是客户端的其中一个公用资源，因此为了公平性，现在由 blockNBT_API 负责完成对该公用资源的占用和释放之实现。
