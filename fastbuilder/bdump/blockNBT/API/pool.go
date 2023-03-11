@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// 以下罗列了每次放置方块实体时需要外部实现赋值的 API
+// 描述了一个通用型的 API ，它可以被用在任何地方，但主要被用于 Bdump/blockNBT
 type GlobalAPI struct {
 	WritePacket        func(packet.Packet) error // 用于向租赁服发送数据包的函数
 	BotName            string                    // 客户端的游戏昵称
@@ -18,6 +18,7 @@ type GlobalAPI struct {
 	PacketHandleResult *PacketHandleResult       // 保存包处理结果；由外部实现实时更新
 }
 
+// 保存包处理结果。理论上，这些结果应该由此结构体下的 HandlePacket 实现实时更新
 type PacketHandleResult struct {
 	commandDatas       commandRequestWithResponce   // 命令请求队列及命令返回值；此实现及内部所有实现不予公开
 	Inventory          inventoryContents            // 存放所有有效库存中的物品数据，例如背包和盔甲栏；此实现不公开但可以通过公开的函数实现对数据的访问
