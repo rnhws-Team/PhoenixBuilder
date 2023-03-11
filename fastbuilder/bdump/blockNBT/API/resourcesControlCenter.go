@@ -399,9 +399,14 @@ func (c *container) release() {
 	c.isUsing.Unlock()
 }
 
-// 等待租赁服响应容器的打开或关闭操作。在调用此函数后，会持续阻塞直到相关操作所对应的互斥锁被释放
-func (c *container) AwaitResponce() {
+// 用于在 打开/关闭 容器前执行，便于后续调用 AwaitResponceAfterSendPacket 以阻塞程序的执行从而
+// 达到等待租赁服响应容器操作的目的
+func (c *container) AwaitResponceBeforeSendPacket() {
 	c.awaitChanges.Lock()
+}
+
+// 等待租赁服响应容器的打开或关闭操作。在调用此函数后，会持续阻塞直到相关操作所对应的互斥锁被释放
+func (c *container) AwaitResponceAfterSendPacket() {
 	c.awaitChanges.Lock()
 	c.awaitChanges.Unlock()
 }

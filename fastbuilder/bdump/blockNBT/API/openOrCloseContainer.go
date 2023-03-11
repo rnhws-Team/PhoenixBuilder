@@ -24,12 +24,14 @@ func (g *GlobalAPI) OpenContainer(
 		_, lock = g.PacketHandleResult.ContainerResources.Occupy(false)
 	}
 	// lock down resources
+	g.PacketHandleResult.ContainerResources.AwaitResponceBeforeSendPacket()
+	// await responce before send packet
 	err := g.UseItemOnBlocks(0, pos, blockName, blockStates, false)
 	if err != nil {
 		return fmt.Errorf("OpenContainer: %v", err)
 	}
 	// open container
-	g.PacketHandleResult.ContainerResources.AwaitResponce()
+	g.PacketHandleResult.ContainerResources.AwaitResponceAfterSendPacket()
 	// wait changes
 	if needOccupyContainerResources {
 		lock.Unlock()
@@ -47,6 +49,8 @@ func (g *GlobalAPI) OpenContainer(
 func (g *GlobalAPI) CloseContainer() error {
 	defer g.PacketHandleResult.ContainerResources.release()
 	// release sharing resources
+	g.PacketHandleResult.ContainerResources.AwaitResponceBeforeSendPacket()
+	// await responce before send packet
 	err := g.WritePacket(&packet.ContainerClose{
 		WindowID:   g.PacketHandleResult.ContainerResources.GetContainerOpenDatas().WindowID,
 		ServerSide: false,
@@ -55,7 +59,7 @@ func (g *GlobalAPI) CloseContainer() error {
 		return fmt.Errorf("CloseContainer: %v", err)
 	}
 	// close container
-	g.PacketHandleResult.ContainerResources.AwaitResponce()
+	g.PacketHandleResult.ContainerResources.AwaitResponceAfterSendPacket()
 	// wait changes
 	return nil
 	// return
