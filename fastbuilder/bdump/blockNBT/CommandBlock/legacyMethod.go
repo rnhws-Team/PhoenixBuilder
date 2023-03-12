@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"phoenixbuilder/fastbuilder/commands_generator"
 	"phoenixbuilder/fastbuilder/types"
+	"phoenixbuilder/minecraft/protocol/packet"
 )
 
 // 以旧方法放置命令方块；主要用于向下兼容，如 operation 36 等
 func (c *CommandBlock) PlaceCommandBlockWithLegacyMethod(block *types.Module, cfg *types.MainConfig) error {
+	var blockName string = "command_block"
 	c.CommandBlockDatas = CommandBlockDatas{
 		Command:            block.CommandBlockData.Command,
 		CustomName:         block.CommandBlockData.CustomName,
@@ -19,6 +21,14 @@ func (c *CommandBlock) PlaceCommandBlockWithLegacyMethod(block *types.Module, cf
 		Auto:               !block.CommandBlockData.NeedsRedstone,
 	}
 	// 初始化
+	if block.CommandBlockData.Mode == packet.CommandBlockChain {
+		blockName = "chain_command_block"
+	} else if block.CommandBlockData.Mode == packet.CommandBlockRepeating {
+		blockName = "repeating_command_block"
+	}
+	block.Block.Name = &blockName
+	c.BlockEntityDatas.Block.Name = blockName
+	// 确定命令方块的类型
 	if block.Block == nil {
 		err := c.WriteDatas(false)
 		if err != nil {
