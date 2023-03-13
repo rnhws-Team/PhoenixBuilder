@@ -50,7 +50,7 @@ var I18nDict_ru_RU map[uint16]string = map[uint16]string{
 	DelayModeSet_DelayAuto:              "Значение задержки было автоматически установлено на: %d",
 	DelayModeSet_ThresholdAuto:          "Порог задержки был автоматически установлен на: %d",
 	DelaySet:                            "Задержка была установлена",
-	DelaySetUnavailableUnderNoneMode:    "[delay set] Недоступно в режиме \"нет\"",
+	DelaySetUnavailableUnderNoneMode:    "[delay set] Недоступно в режиме \"none\"",
 	DelayThreshold_OnlyDiscrete:         "Порог задержки может быть установлен только в дискретном режиме.",
 	DelayThreshold_Set:                  "Порог задержки был установлен на %d",
 	ERRORStr:                            "ошибающийся",
