@@ -61,6 +61,7 @@ func (g *GlobalAPI) PlaceItemIntoContainer(
 
 // 将已放入铁砧第一格(注意是第一格)的物品的物品名称修改为 name 并返还到背包中的 slot 处。
 // 当且仅当租赁服回应操作结果后再返回值。
+// resp 参数指代把物品放入铁砧第一格时租赁服返回的结果
 func (g *GlobalAPI) ChangeItemName(resp protocol.ItemStackResponse, name string, slot uint8) error {
 	var stackNetworkID int32
 	var count uint8
