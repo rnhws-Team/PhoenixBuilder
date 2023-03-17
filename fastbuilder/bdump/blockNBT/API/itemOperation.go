@@ -62,7 +62,8 @@ func (g *GlobalAPI) PlaceItemIntoContainer(
 // 将已放入铁砧第一格(注意是第一格)的物品的物品名称修改为 name 并返还到背包中的 slot 处。
 // 当且仅当租赁服回应操作结果后再返回值。
 // resp 参数指代把物品放入铁砧第一格时租赁服返回的结果。
-// 在调用此函数时应确保客户端的背包中至少有一个槽位为空
+// 在调用此函数时应确保快捷栏 0 或 1 为空，因为中途会将这两个物品栏的其中一个设为空；
+// 目前尚且未找到更好的处理办法。
 func (g *GlobalAPI) ChangeItemName(resp protocol.ItemStackResponse, name string, slot uint8) error {
 	var stackNetworkID int32
 	var count uint8
@@ -132,6 +133,7 @@ func (g *GlobalAPI) ChangeItemName(resp protocol.ItemStackResponse, name string,
 		return fmt.Errorf("ChangeItemName: Operation %v have been canceled by error code %v; ans = %#v", ans.RequestID, ans.Status, ans)
 	}
 	// 如果物品操作请求被拒绝
+	g.PacketHandleResult.Inventory.lockDown.Lock()
 	var replaceSlot int = 0
 	if slot == 0 {
 		replaceSlot = 1
@@ -140,6 +142,7 @@ func (g *GlobalAPI) ChangeItemName(resp protocol.ItemStackResponse, name string,
 	if err != nil {
 		return fmt.Errorf("ChangeItemName: %v", err)
 	}
+	g.PacketHandleResult.Inventory.lockDown.Unlock()
 	// 刷新物品栏
 	// ps. 目前我没找到更好的解决办法，所以暂时先这样吧
 	return nil
