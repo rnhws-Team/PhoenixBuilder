@@ -12,11 +12,15 @@ type AnvilChangeItemName struct {
 	Name string // 要修改的目标名称
 }
 
-// 在 pos 处放置一个方块状态为 blockStates 的铁砧，并依次发送 request 列表中的物品名称修改请求
+// 在 pos 处放置一个方块状态为 blockStates 的铁砧，并依次发送 request 列表中的物品名称修改请求。
+// 当 needToDestroyAnvil 为真时，被放置的铁砧会被移除为空气，否则予以保留。
+// 返回值 [3]int32 指代铁砧最终被放置的位置，因为给定的 pos 不一定可以容纳铁砧及它的承重方块，
+// 这代表着铁砧的实际生成位置与给定的位置可能存在差异。
 func (g *GlobalAPI) ChangeItemNameByUsingAnvil(
 	pos [3]int32,
 	blockStates string,
 	request []AnvilChangeItemName,
+	needToDestroyAnvil bool,
 ) error {
 	err := g.SendSettingsCommand("gamemode 1", true)
 	if err != nil {
@@ -92,6 +96,13 @@ func (g *GlobalAPI) ChangeItemNameByUsingAnvil(
 	// 关闭铁砧
 	lockDown.Unlock()
 	// 释放容器公用资源
+	if needToDestroyAnvil {
+		_, err := g.SendWSCommandWithResponce(fmt.Sprintf("setblock %d %d %d air", correctPos[0], correctPos[1], correctPos[2]))
+		if err != nil {
+			return fmt.Errorf("ChangeItemNameByUsingAnvil: %v", err)
+		}
+	}
+	// 如果需要移除铁砧
 	err = g.RevertBlockUnderAnvil(uniqueId, correctPos)
 	if err != nil {
 		return fmt.Errorf("ChangeItemNameByUsingAnvil: %v", err)
