@@ -62,7 +62,7 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) bool {
 			return
 		}
 		if len(datas) <= 0 {
-			o.Frame.GetGameControl().SayTo(chat.Name, fmt.Sprintf("§bomega_storage/data/%v §c处的文件没有填写物品名称，或许是个空文件，也可能是文件本身不存在", o.FilePath))
+			o.Frame.GetGameControl().SayTo(chat.Name, fmt.Sprintf("§bomega_storage/data/%v §c处的文件没有填写物品名称§f，§c可能这个文件是个空文件§f，§c也可能是文件本身不存在", o.FilePath))
 			return
 		}
 		itemName := string(datas)
