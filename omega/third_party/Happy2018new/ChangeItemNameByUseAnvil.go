@@ -56,7 +56,7 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) bool {
 		o.apis.BotName = o.Frame.GetUQHolder().GetBotName()
 		// 初始化
 		datas, err := o.Frame.GetFileData(o.FilePath)
-		if err != nil {
+		if err != nil || len(datas) <= 0 {
 			o.Frame.GetGameControl().SayTo(chat.Name, fmt.Sprintf("§c无法打开 §bomega_storage/data/%v §c处的文件\n详细日志已发送到控制台", o.FilePath))
 			pterm.Error.Printf("修改物品名称: %v\n", err)
 			return
