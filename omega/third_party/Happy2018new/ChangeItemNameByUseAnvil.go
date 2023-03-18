@@ -8,7 +8,6 @@ import (
 	"phoenixbuilder/minecraft/protocol"
 	"phoenixbuilder/minecraft/protocol/packet"
 	"phoenixbuilder/omega/defines"
-	"strings"
 
 	"github.com/pterm/pterm"
 )
@@ -66,7 +65,6 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) bool {
 			return
 		}
 		itemName := string(datas)
-		itemName = strings.Replace(itemName, `\n`, "\n", -1)
 		// 获取物品的新名称
 		itemDatas, err := o.apis.PacketHandleResult.Inventory.GetItemStackInfo(0, 0)
 		if err != nil {
