@@ -94,7 +94,7 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) bool {
 			int32(math.Floor(float64(parseAns[0].Position[2]))),
 		}
 		// 取得机器人当前的坐标
-		err = o.apis.ChangeItemNameByUsingAnvil(
+		successStates, err := o.apis.ChangeItemNameByUsingAnvil(
 			pos,
 			`["direction": 0, "damage": "undamaged"]`,
 			[]blockNBT_API.AnvilChangeItemName{
@@ -107,6 +107,14 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) bool {
 		)
 		if err != nil {
 			panic(fmt.Sprintf("修改物品名称: %v", err))
+		}
+		if len(successStates) <= 0 {
+			o.Frame.GetGameControl().SayTo(chat.Name, "§c请确保机器人在快捷栏 §b0 §c有一个物品")
+			return
+		}
+		if successStates[0] == false {
+			o.Frame.GetGameControl().SayTo(chat.Name, "§c物品名称修改失败§f，§c请检查新的名称是否与原始名称相同")
+			return
 		}
 		// 修改物品名称
 		newItemDatas, err := o.apis.PacketHandleResult.Inventory.GetItemStackInfo(0, 0)
