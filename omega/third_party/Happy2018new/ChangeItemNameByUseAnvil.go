@@ -126,29 +126,20 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) bool {
 			return
 		}
 		// 读取新物品的数据
-		dropResp, err := o.apis.SendItemStackRequestWithResponce(&packet.ItemStackRequest{
-			Requests: []protocol.ItemStackRequest{
-				{
-					Actions: []protocol.StackRequestAction{
-						&protocol.DropStackRequestAction{
-							Count: byte(newItemDatas.Stack.Count),
-							Source: protocol.StackRequestSlotInfo{
-								ContainerID:    28,
-								Slot:           0,
-								StackNetworkID: newItemDatas.StackNetworkID,
-							},
-							Randomly: false,
-						},
-					},
-				},
+		dropResp, err := o.apis.DropItemAll(
+			protocol.StackRequestSlotInfo{
+				ContainerID:    28,
+				Slot:           0,
+				StackNetworkID: newItemDatas.StackNetworkID,
 			},
-		})
+			0,
+		)
 		if err != nil {
 			o.Frame.GetGameControl().SayTo(chat.Name, "§c尝试丢出新物品时失败\n详细日志已发送到控制台")
 			pterm.Error.Printf("修改物品名称: %v\n", err)
 			return
 		}
-		if dropResp[0].Status != 0 {
+		if !dropResp {
 			o.Frame.GetGameControl().SayTo(chat.Name, "§c尝试丢出新物品时失败\n详细日志已发送到控制台")
 			pterm.Error.Printf("修改物品名称: dropResp = %#v\n", dropResp)
 			return
