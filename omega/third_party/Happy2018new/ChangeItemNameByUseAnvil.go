@@ -112,10 +112,6 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) bool {
 			pterm.Error.Printf("修改物品名称: %v\n", err)
 			return
 		}
-		if len(successStates) <= 0 {
-			o.Frame.GetGameControl().SayTo(chat.Name, "§c请确保机器人在快捷栏 §b0 §c有一个物品")
-			return
-		}
 		if successStates[0] == false {
 			o.Frame.GetGameControl().SayTo(chat.Name, "§c物品名称修改失败§f，§c请检查新的名称是否与原始名称相同")
 			return
