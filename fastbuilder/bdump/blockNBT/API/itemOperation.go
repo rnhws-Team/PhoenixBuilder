@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"phoenixbuilder/minecraft/protocol"
 	"phoenixbuilder/minecraft/protocol/packet"
-
-	"github.com/pterm/pterm"
 )
 
 // 在描述物品移动操作时使用的结构体
@@ -263,7 +261,7 @@ func (g *GlobalAPI) ChangeItemName(
 	if ans.Status == 0 {
 		err = g.updateSlotInfoOnlyUseForAnvilChangeItemName(ans, oldItem)
 		if err != nil {
-			panic(pterm.Error.Sprintf("ChangeItemName: %v", err))
+			panic(fmt.Sprintf("ChangeItemName: %v", err))
 		}
 		// 更新槽位数据
 	} else {
@@ -281,14 +279,14 @@ func (g *GlobalAPI) ChangeItemName(
 		}
 		newAns, err := g.moveItem(source, destination, count)
 		if err != nil {
-			panic(pterm.Error.Sprintf("ChangeItemName: %v", err))
+			panic(fmt.Sprintf("ChangeItemName: %v", err))
 		}
 		if newAns[0].Status != 0 {
-			panic(pterm.Error.Sprintf("ChangeItemName: Could not revert operation %v because of the new operation which numbered %v have been canceled by error code %v. This maybe is a BUG, please provide this logs to the developers!\nnewAns = %#v; source = %#v; destination = %#v; moveCount = %v", ans.RequestID, newAns, source, destination, count))
+			panic(fmt.Sprintf("ChangeItemName: Could not revert operation %v because of the new operation which numbered %v have been canceled by error code %v. This maybe is a BUG, please provide this logs to the developers!\nnewAns = %#v; source = %#v; destination = %#v; moveCount = %v", ans.RequestID, newAns[0].RequestID, newAns[0].Status, newAns, source, destination, count))
 		}
 		err = g.updateSlotInfoOnlyUseForAnvilRevertOperation(newAns[0], oldItem)
 		if err != nil {
-			panic(pterm.Error.Sprintf("ChangeItemName: %v", err))
+			panic(fmt.Sprintf("ChangeItemName: %v", err))
 		}
 		// 如果名称未发生变化或者经验值不足等造成的改名失败
 	}
