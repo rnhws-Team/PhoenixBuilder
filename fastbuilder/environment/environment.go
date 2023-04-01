@@ -25,7 +25,8 @@ type PBEnvironment struct {
 	CommandSender             interfaces.CommandSender
 	Connection                interface{}
 	UQHolder                  interface{}
-	NewUQHolder               interface{} // for blockNBT
+	NewUQHolder               interface{}
+	NewUQHolderUpdater        interface{}
 	TaskHolder                interface{}
 	OmegaHolder               interface{}
 	OmegaAdaptorHolder        interface{}
