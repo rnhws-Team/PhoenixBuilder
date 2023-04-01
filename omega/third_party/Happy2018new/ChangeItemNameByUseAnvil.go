@@ -4,17 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	blockNBT_API "phoenixbuilder/fastbuilder/bdump/blockNBT/API"
+	GlobalAPI "phoenixbuilder/Interaction"
 	"phoenixbuilder/minecraft/protocol"
 	"phoenixbuilder/minecraft/protocol/packet"
 	"phoenixbuilder/omega/defines"
+	"strings"
 
 	"github.com/pterm/pterm"
 )
 
 type ChangeItemNameByUseAnvil struct {
 	*defines.BasicComponent
-	apis     blockNBT_API.GlobalAPI
+	apis     GlobalAPI.GlobalAPI
 	Triggers []string `json:"菜单触发词"`
 	Usage    string   `json:"菜单项描述"`
 	FilePath string   `json:"从何处提取物品的新名称(填写路径)"`
@@ -29,16 +30,18 @@ func (o *ChangeItemNameByUseAnvil) Init(settings *defines.ComponentConfig, stora
 
 func (o *ChangeItemNameByUseAnvil) Inject(frame defines.MainFrame) {
 	o.Frame = frame
-	o.apis = blockNBT_API.GlobalAPI{
+	o.apis = GlobalAPI.GlobalAPI{
 		WritePacket: func(p packet.Packet) error {
 			o.Frame.GetGameControl().SendMCPacket(p)
 			return nil
 		},
-		BotName:            o.Frame.GetUQHolder().GetBotName(),
-		BotIdentity:        "",
-		BotUniqueID:        o.Frame.GetUQHolder().BotUniqueID,
-		BotRunTimeID:       o.Frame.GetUQHolder().BotRuntimeID,
-		PacketHandleResult: o.Frame.GetNewUQHolder(),
+		BotInfo: GlobalAPI.BotInfo{
+			BotName:      o.Frame.GetUQHolder().GetBotName(),
+			BotIdentity:  "",
+			BotUniqueID:  o.Frame.GetUQHolder().BotUniqueID,
+			BotRunTimeID: o.Frame.GetUQHolder().BotRuntimeID,
+		},
+		Resources: o.Frame.GetNewUQHolder(),
 	}
 	o.Frame.GetGameListener().SetGameMenuEntry(&defines.GameMenuEntry{
 		MenuEntry: defines.MenuEntry{
@@ -52,7 +55,7 @@ func (o *ChangeItemNameByUseAnvil) Inject(frame defines.MainFrame) {
 
 func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) bool {
 	go func() {
-		o.apis.BotName = o.Frame.GetUQHolder().GetBotName()
+		o.apis.BotInfo.BotName = o.Frame.GetUQHolder().GetBotName()
 		// 初始化
 		datas, err := o.Frame.GetFileData(o.FilePath)
 		if err != nil {
@@ -64,9 +67,9 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) bool {
 			o.Frame.GetGameControl().SayTo(chat.Name, fmt.Sprintf("§bomega_storage/data/%v §c处的文件没有填写物品名称§f，§c可能这个文件是个空文件§f，§c也可能是文件本身不存在", o.FilePath))
 			return
 		}
-		itemName := string(datas)
+		itemName := strings.ReplaceAll(string(datas), "\r", "")
 		// 获取物品的新名称
-		itemDatas, err := o.apis.PacketHandleResult.Inventory.GetItemStackInfo(0, 0)
+		itemDatas, err := o.apis.Resources.Inventory.GetItemStackInfo(0, 0)
 		if err != nil {
 			o.Frame.GetGameControl().SayTo(chat.Name, "§c在读取快捷栏 §b0 §c时发送了错误\n详细日志已发送到控制台")
 			pterm.Error.Printf("修改物品名称: %v\n", err)
@@ -99,7 +102,7 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) bool {
 		successStates, err := o.apis.ChangeItemNameByUsingAnvil(
 			pos,
 			`["direction": 0, "damage": "undamaged"]`,
-			[]blockNBT_API.AnvilChangeItemName{
+			[]GlobalAPI.AnvilChangeItemName{
 				{
 					Slot: 0,
 					Name: itemName,
@@ -117,7 +120,7 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) bool {
 			return
 		}
 		// 修改物品名称
-		newItemDatas, err := o.apis.PacketHandleResult.Inventory.GetItemStackInfo(0, 0)
+		newItemDatas, err := o.apis.Resources.Inventory.GetItemStackInfo(0, 0)
 		if err != nil {
 			o.Frame.GetGameControl().SayTo(chat.Name, "§c在读取快捷栏 §b0 §c时发送了错误\n详细日志已发送到控制台")
 			pterm.Error.Printf("修改物品名称: %v\n", err)
