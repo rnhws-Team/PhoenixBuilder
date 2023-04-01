@@ -50,6 +50,10 @@ func (rc *EmbeddedAdaptor) GetInitUQHolderCopy() *uqHolder.UQHolder {
 	return newHolder
 }
 
+func (rc *EmbeddedAdaptor) GetGlobalResources() *ResourcesControlCenter.Resources {
+	return rc.env.Resources.(*ResourcesControlCenter.Resources)
+}
+
 func (rc *EmbeddedAdaptor) Write(pkt mc_packet.Packet) (err error) {
 	return rc.env.Connection.(*minecraft.Conn).WritePacket(pkt)
 }
@@ -102,7 +106,6 @@ func EnableOmegaSystem(env *environment.PBEnvironment) (*EmbeddedAdaptor, func()
 	}
 
 	omega := mainframe.NewOmega()
-	omega.NewUQHolder = env.NewUQHolder.(*ResourcesControlCenter.Resources)
 	omega.Bootstrap(ea)
 	env.OmegaHolder = omega
 	env.OmegaAdaptorHolder = ea

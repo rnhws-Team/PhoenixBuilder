@@ -38,7 +38,7 @@ func (o *PickBlock) Inject(frame defines.MainFrame) {
 			BotUniqueID:  o.Frame.GetUQHolder().BotUniqueID,
 			BotRunTimeID: o.Frame.GetUQHolder().BotRuntimeID,
 		},
-		Resources: o.Frame.GetNewUQHolder(),
+		Resources: o.Frame.GetResources(),
 	}
 	o.Frame.GetGameListener().SetGameMenuEntry(&defines.GameMenuEntry{
 		MenuEntry: defines.MenuEntry{
@@ -114,6 +114,9 @@ func (o *PickBlock) onInvoke(chat *defines.GameChat) bool {
 		}
 		// 获取脚下坐标
 		resp, err := o.apis.SendWSCommandWithResponce("querytarget @s")
+		if err != nil {
+			o.Frame.GetGameControl().SayTo(chat.Name, "§c无法 §fPick 目标的方块")
+		}
 		respString := resp.OutputMessages[0].Parameters[0]
 		var respList []interface{}
 		json.Unmarshal([]byte(respString), &respList)
