@@ -41,7 +41,7 @@ func (o *ChangeItemNameByUseAnvil) Inject(frame defines.MainFrame) {
 			BotUniqueID:  o.Frame.GetUQHolder().BotUniqueID,
 			BotRunTimeID: o.Frame.GetUQHolder().BotRuntimeID,
 		},
-		Resources: o.Frame.GetNewUQHolder(),
+		Resources: o.Frame.GetResources(),
 	}
 	o.Frame.GetGameListener().SetGameMenuEntry(&defines.GameMenuEntry{
 		MenuEntry: defines.MenuEntry{

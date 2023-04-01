@@ -174,7 +174,7 @@ func CreateTask(commandLine string, env *environment.PBEnvironment) *Task {
 			BotRunTimeID: env.Connection.(*minecraft.Conn).GameData().EntityRuntimeID,
 			BotUniqueID:  env.Connection.(*minecraft.Conn).GameData().EntityUniqueID,
 		},
-		Resources: env.NewUQHolder.(*ResourcesControlCenter.Resources),
+		Resources: env.Resources.(*ResourcesControlCenter.Resources),
 	}
 
 	und, _ := uuid.NewUUID()
