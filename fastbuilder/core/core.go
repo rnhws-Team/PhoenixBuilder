@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"phoenixbuilder/ResourcesControlCenter"
 	"phoenixbuilder/fastbuilder/args"
-	blockNBT_API "phoenixbuilder/fastbuilder/bdump/blockNBT/API"
 	"phoenixbuilder/fastbuilder/configuration"
 	fbauth "phoenixbuilder/fastbuilder/cv4/auth"
 	"phoenixbuilder/fastbuilder/environment"
@@ -197,8 +197,8 @@ func InitClient(env *environment.PBEnvironment) {
 	env.UQHolder.(*uqHolder.UQHolder).UpdateFromConn(conn)
 	env.UQHolder.(*uqHolder.UQHolder).CurrentTick = 0
 
-	env.NewUQHolder = &blockNBT_API.PacketHandleResult{}
-	env.NewUQHolder.(*blockNBT_API.PacketHandleResult).InitValue()
+	env.NewUQHolder = &ResourcesControlCenter.Resources{}
+	env.NewUQHolderUpdater = env.NewUQHolder.(*ResourcesControlCenter.Resources).Init()
 	// for blockNBT
 
 	if args.ShouldEnableOmegaSystem() {
@@ -350,7 +350,7 @@ func EnterWorkerThread(env *environment.PBEnvironment, breaker chan struct{}) {
 			panic(err)
 		}
 
-		env.NewUQHolder.(*blockNBT_API.PacketHandleResult).HandlePacket(&pk) // for blockNBT
+		env.NewUQHolderUpdater.(func(pk *packet.Packet))(&pk)
 
 		if env.OmegaAdaptorHolder != nil {
 			env.OmegaAdaptorHolder.(*embed.EmbeddedAdaptor).FeedPacketAndByte(pk, data)
