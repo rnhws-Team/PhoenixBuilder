@@ -174,7 +174,7 @@ func CreateTask(commandLine string, env *environment.PBEnvironment) *Task {
 			BotRunTimeID: env.Connection.(*minecraft.Conn).GameData().EntityRuntimeID,
 			BotUniqueID:  env.Connection.(*minecraft.Conn).GameData().EntityUniqueID,
 		},
-		Resources: env.NewUQHolder.(*ResourcesControlCenter.Resources),
+		Resources: env.Resources.(*ResourcesControlCenter.Resources),
 	}
 
 	und, _ := uuid.NewUUID()
@@ -326,7 +326,7 @@ func CreateTask(commandLine string, env *environment.PBEnvironment) *Task {
 					pterm.Warning.Printf("%v\n", err)
 				}
 			} else if curblock.ChestSlot != nil {
-				cmdsender.SendDimensionalCommand(commands_generator.ReplaceItemRequest(curblock, cfg))
+				cmdsender.SendDimensionalCommand(commands_generator.ReplaceItemRequest(curblock, ""))
 			} else {
 				err := cmdsender.SendDimensionalCommand(commands_generator.SetBlockRequest(curblock, cfg))
 				if err != nil {

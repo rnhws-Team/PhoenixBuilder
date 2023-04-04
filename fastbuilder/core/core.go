@@ -47,7 +47,7 @@ var PassFatal bool = false
 func create_environment() *environment.PBEnvironment {
 	env := &environment.PBEnvironment{}
 	env.UQHolder = nil
-	env.NewUQHolder = nil
+	env.Resources = nil
 	env.ActivateTaskStatus = make(chan bool)
 	env.TaskHolder = fbtask.NewTaskHolder()
 	functionHolder := function.NewFunctionHolder(env)
@@ -197,9 +197,8 @@ func InitClient(env *environment.PBEnvironment) {
 	env.UQHolder.(*uqHolder.UQHolder).UpdateFromConn(conn)
 	env.UQHolder.(*uqHolder.UQHolder).CurrentTick = 0
 
-	env.NewUQHolder = &ResourcesControlCenter.Resources{}
-	env.NewUQHolderUpdater = env.NewUQHolder.(*ResourcesControlCenter.Resources).Init()
-	// for blockNBT
+	env.Resources = &ResourcesControlCenter.Resources{}
+	env.ResourcesUpdater = env.Resources.(*ResourcesControlCenter.Resources).Init()
 
 	if args.ShouldEnableOmegaSystem() {
 		_, cb := embed.EnableOmegaSystem(env)
@@ -350,7 +349,7 @@ func EnterWorkerThread(env *environment.PBEnvironment, breaker chan struct{}) {
 			panic(err)
 		}
 
-		env.NewUQHolderUpdater.(func(pk *packet.Packet))(&pk)
+		env.ResourcesUpdater.(func(pk *packet.Packet))(&pk)
 
 		if env.OmegaAdaptorHolder != nil {
 			env.OmegaAdaptorHolder.(*embed.EmbeddedAdaptor).FeedPacketAndByte(pk, data)

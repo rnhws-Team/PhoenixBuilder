@@ -95,7 +95,7 @@ type CtxProvider interface {
 	GetContext(key string) (entry interface{}, hasK bool)
 	SetContext(key string, entry interface{})
 	GetUQHolder() *uqHolder.UQHolder
-	GetNewUQHolder() *ResourcesControlCenter.Resources
+	GetResources() *ResourcesControlCenter.Resources
 }
 
 // ConfigProvider 是帮助一个插件获得和修改别的插件的接口
