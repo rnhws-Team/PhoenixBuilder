@@ -122,7 +122,7 @@ func (o *PickBlock) onInvoke(chat *defines.GameChat) bool {
 			o.Frame.GetGameControl().SayTo(chat.Name, "§c无法 §fPick 目标的方块")
 		}
 		pos := querytargetInfo[0].Position
-		x, y, z := int32(math.Floor(float64(pos[0]))), int32(math.Floor(float64(pos[1]))), int32(math.Floor(float64(pos[2])))
+		x, y, z := int32(math.Floor(float64(pos[0]))), int32(math.Floor(float64(pos[1])))-2, int32(math.Floor(float64(pos[2])))
 		// 尝试 Pick 方块
 		o.blockPick(x, y, z)
 		// 面向玩家并尝试丢出方块
