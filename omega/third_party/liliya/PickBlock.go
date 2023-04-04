@@ -117,15 +117,13 @@ func (o *PickBlock) onInvoke(chat *defines.GameChat) bool {
 		if err != nil {
 			o.Frame.GetGameControl().SayTo(chat.Name, "§c无法 §fPick 目标的方块")
 		}
-		respString := resp.OutputMessages[0].Parameters[0]
-		var respList []interface{}
-		json.Unmarshal([]byte(respString), &respList)
-		if len(respList) <= 0 {
-			return
+		querytargetInfo, err := o.apis.ParseQuerytargetInfo(resp)
+		if err != nil {
+			o.Frame.GetGameControl().SayTo(chat.Name, "§c无法 §fPick 目标的方块")
 		}
-		respMap := respList[0].(map[string]interface{})
-		x, y, z := int32(math.Floor(respMap["position"].(map[string]interface{})["x"].(float64))), int32(math.Floor(respMap["position"].(map[string]interface{})["y"].(float64)))-2, int32(math.Floor(float64(respMap["position"].(map[string]interface{})["z"].(float64))))
-		// 尝试Pick方块
+		pos := querytargetInfo[0].Position
+		x, y, z := int32(math.Floor(float64(pos[0]))), int32(math.Floor(float64(pos[1]))), int32(math.Floor(float64(pos[2])))
+		// 尝试 Pick 方块
 		o.blockPick(x, y, z)
 		// 面向玩家并尝试丢出方块
 		o.apis.SendSettingsCommand(fmt.Sprintf("tp ~ ~ ~ facing @a[name=\"%s\"]", chat.Name), true)
