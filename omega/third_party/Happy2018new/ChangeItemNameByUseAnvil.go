@@ -91,7 +91,7 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) bool {
 			for i := 0; i < 3; i++ {
 				got, err := strconv.ParseInt(chat.Msg[i+1], 10, 32)
 				if err != nil {
-					o.Frame.GetGameControl().SayTo(chat.Name, fmt.Sprintf("§c无法解析坐标数据§f，§c错误发生在位置 %v §f，§c请确认你提供了正确的坐标数据\n详细日志已发送到控制台", i))
+					o.Frame.GetGameControl().SayTo(chat.Name, fmt.Sprintf("§c无法解析坐标数据§f，§c错误发生在位置 §b%v §f，§c请确认你提供了正确的坐标数据\n详细日志已发送到控制台", i))
 					pterm.Error.Printf("修改物品名称: %v\n", err)
 					return
 				}
@@ -250,7 +250,7 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) bool {
 			return
 		}
 		if !successStates[0] {
-			o.Frame.GetGameControl().SayTo(chat.Name, "§c物品名称修改失败§f，§c请检查新的名称是否与原始名称相同")
+			o.Frame.GetGameControl().SayTo(chat.Name, "§c物品名称修改失败§f，§c请检查新的名称是否与原始名称相同或该物品是否可被移动")
 			return
 		}
 		// 修改物品名称
