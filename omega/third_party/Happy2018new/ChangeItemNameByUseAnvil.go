@@ -242,7 +242,6 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) bool {
 					Name: itemName,
 				},
 			},
-			true,
 		)
 		if err != nil {
 			o.Frame.GetGameControl().SayTo(chat.Name, "§c物品名称修改失败\n详细日志已发送到控制台")
