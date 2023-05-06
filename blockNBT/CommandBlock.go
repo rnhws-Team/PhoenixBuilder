@@ -221,6 +221,9 @@ func (c *CommandBlock) PlaceCommandBlockWithLegacyMethod(
 	} else if block.CommandBlockData.Mode == packet.CommandBlockRepeating {
 		blockName = "repeating_command_block"
 	}
+	if block.Block == nil {
+		block.Block = &types.Block{}
+	}
 	block.Block.Name = &blockName
 	c.Package.Block.Name = blockName
 	// 确定命令方块的类型
