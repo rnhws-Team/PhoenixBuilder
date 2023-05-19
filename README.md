@@ -19,6 +19,6 @@
   此分支并非为 `官方分支` ，主要用于发布 `Dev 预览版` 。
 
 ## 致谢
-  - [`@CMA2401PT`](https://github.com/CMA2401PT)
-  - [`@LNSSPsd`](https://github.com/LNSSPsd)
-  - [`@Torrekie`](https://github.com/Torrekie)
+  - [_@CMA2401PT_](https://github.com/CMA2401PT)
+  - [_@LNSSPsd_](https://github.com/LNSSPsd)
+  - [_@Torrekie_](https://github.com/Torrekie)
