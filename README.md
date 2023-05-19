@@ -13,4 +13,12 @@
 </p>
 <p align="center">
   PhoenixBuilder is a multifunctional structure generating tool for Minecraft China Edition based on gophertunnel.
-</p>
+<p>
+
+## 必要说明
+  此分支并非为 `官方分支` ，主要用于发布 `Dev 预览版` 。
+
+## 致谢
+  - [`@CMA2401PT`](https://github.com/CMA2401PT)
+  - [`@LNSSPsd`](https://github.com/LNSSPsd)
+  - [`@Torrekie`](https://github.com/Torrekie)
