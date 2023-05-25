@@ -2,7 +2,7 @@ name: Check
 
 on:
   push:
-    branches: [ MainWithGUI ]
+    branches: [ Mainfull ]
 
 jobs:
   phoenixbuilder-check:
