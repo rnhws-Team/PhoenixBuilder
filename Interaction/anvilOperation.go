@@ -15,8 +15,15 @@ type AnvilChangeItemName struct {
 
 // 描述物品名称修改请求的结果
 type ACIN_Responce struct {
+	// 指代物品名称的修改结果。为真时代表成
+	// 功，否则失败
 	SuccessStates bool
-	RevertMethod  *bool
+	// 指代物品名称修改失败时选用的处理办法。
+	// 为真时代表使用“丢出法”，即直接将失败
+	// 的物品从铁砧丢出；为假时将使用正常处
+	// 理方法，也就是将物品还原到背包中的原
+	// 始位置
+	RevertMethod *bool
 }
 
 /*
