@@ -298,15 +298,13 @@ func (o *Omega) bootstrapDirs() {
 
 func (o *Omega) bootstrapComponents() (success bool) {
 	success = false
-	/*
-		defer func() {
-			r := recover()
-			if r != nil {
-				success = false
-				pterm.Error.Printf("正在加载的组件配置文件不正确，因此 Omega 系统拒绝启动，具体错误如下:\n%v\n建议根据说明修改对应的配置文件，如果你修不好了，删除对应配置文件即可\n", r)
-			}
-		}()
-	*/
+	defer func() {
+		r := recover()
+		if r != nil {
+			success = false
+			pterm.Error.Printf("正在加载的组件配置文件不正确，因此 Omega 系统拒绝启动，具体错误如下:\n%v\n建议根据说明修改对应的配置文件，如果你修不好了，删除对应配置文件即可\n", r)
+		}
+	}()
 	total := len(o.ComponentConfigs)
 	corePool := getCoreComponentsPool()
 	coreComponentsLoaded := map[string]bool{}
