@@ -298,13 +298,15 @@ func (o *Omega) bootstrapDirs() {
 
 func (o *Omega) bootstrapComponents() (success bool) {
 	success = false
-	defer func() {
-		r := recover()
-		if r != nil {
-			success = false
-			pterm.Error.Printf("正在加载的组件配置文件不正确，因此 Omega 系统拒绝启动，具体错误如下:\n%v\n建议根据说明修改对应的配置文件，如果你修不好了，删除对应配置文件即可\n", r)
-		}
-	}()
+	/*
+		defer func() {
+			r := recover()
+			if r != nil {
+				success = false
+				pterm.Error.Printf("正在加载的组件配置文件不正确，因此 Omega 系统拒绝启动，具体错误如下:\n%v\n建议根据说明修改对应的配置文件，如果你修不好了，删除对应配置文件即可\n", r)
+			}
+		}()
+	*/
 	total := len(o.ComponentConfigs)
 	corePool := getCoreComponentsPool()
 	coreComponentsLoaded := map[string]bool{}
@@ -421,7 +423,6 @@ func (o *Omega) Bootstrap(adaptor defines.ConnectionAdaptor) {
 	o.QuerySensitiveInfoFN = adaptor.QuerySensitiveInfo
 	o.adaptor = adaptor
 	o.uqHolder = adaptor.GetInitUQHolderCopy()
-	o.resources = adaptor.GetGlobalResources()
 	o.Reactor.scoreboardHolder = defines.NewScoreBoardHolder(o.uqHolder)
 	fmt.Println("开始空间回收任务: 日志压缩")
 	CompressLogs(o.storageRoot, 7, 3)
@@ -454,7 +455,7 @@ func (o *Omega) Bootstrap(adaptor defines.ConnectionAdaptor) {
 	o.checkAndLoadConfig()
 
 	o.backendLogger.Write("启用 Game Ctrl 模块")
-	o.GameCtrl = newGameCtrl(o)
+	o.GameCtrl = newGameCtrl(o, adaptor.GetInteraction())
 
 	o.backendLogger.Write("初始化 Context ...")
 	o.initContext()

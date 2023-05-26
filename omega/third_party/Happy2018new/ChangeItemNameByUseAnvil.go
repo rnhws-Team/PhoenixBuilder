@@ -34,19 +34,7 @@ func (o *ChangeItemNameByUseAnvil) Init(settings *defines.ComponentConfig, stora
 
 func (o *ChangeItemNameByUseAnvil) Inject(frame defines.MainFrame) {
 	o.Frame = frame
-	o.apis = GlobalAPI.GlobalAPI{
-		WritePacket: func(p packet.Packet) error {
-			o.Frame.GetGameControl().SendMCPacket(p)
-			return nil
-		},
-		BotInfo: GlobalAPI.BotInfo{
-			BotName:      o.Frame.GetUQHolder().GetBotName(),
-			BotIdentity:  "",
-			BotUniqueID:  o.Frame.GetUQHolder().BotUniqueID,
-			BotRunTimeID: o.Frame.GetUQHolder().BotRuntimeID,
-		},
-		Resources: o.Frame.GetResources(),
-	}
+	o.apis = o.Frame.GetGameControl().GetInteraction()
 	o.Frame.GetGameListener().SetGameMenuEntry(&defines.GameMenuEntry{
 		MenuEntry: defines.MenuEntry{
 			Triggers:     o.Triggers,
@@ -248,7 +236,13 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) bool {
 			pterm.Error.Printf("修改物品名称: %v\n", err)
 			return
 		}
-		if !successStates[0] {
+		if successStates[0].RevertMethod != nil {
+			if !successStates[0].SuccessStates && *successStates[0].RevertMethod {
+				o.Frame.GetGameControl().SayTo(chat.Name, "§c物品名称修改失败§f，§c请确保相应槽位未被持续占用§f！\n§c原物品已丢出")
+				return
+			}
+		}
+		if !successStates[0].SuccessStates {
 			o.Frame.GetGameControl().SayTo(chat.Name, "§c物品名称修改失败§f，§c请检查新的名称是否与原始名称相同或该物品是否可被移动")
 			return
 		}
