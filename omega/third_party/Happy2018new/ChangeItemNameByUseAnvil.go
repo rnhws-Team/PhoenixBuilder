@@ -257,7 +257,7 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) {
 			o.Frame.GetGameControl().SayTo(chat.Name, "§c物品名称修改失败§f，§c请检查新的名称是否与原始名称相同或该物品是否可被移动")
 			realSlot := resp[0].Destination.Slot
 			if realSlot != targetSlot {
-				o.Frame.GetGameControl().SayTo(chat.Name, fmt.Sprintf("§e检测到原物品栏已被占用§f，\n§e现在已该物品还原到物品栏 §b%v", realSlot))
+				o.Frame.GetGameControl().SayTo(chat.Name, fmt.Sprintf("§e检测到原物品栏已被占用§f，\n§e现在已将该物品还原到物品栏 §b%v", realSlot))
 			}
 			return
 		}
