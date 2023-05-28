@@ -113,7 +113,7 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) {
 		}
 		itemName = strings.ReplaceAll(string(datas), "\r", "")
 	} else if mode == 1 {
-		_, holder := o.apis.Resources.Structure.Occupy()
+		holder := o.apis.Resources.Structure.Occupy()
 		resp, err := o.apis.SendStructureRequestWithResponce(
 			&packet.StructureTemplateDataRequest{
 				StructureName: "Omega:ChangeItemNameByUseAnvil",
@@ -237,6 +237,7 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) {
 	resp, err := o.apis.ChangeItemNameByUsingAnvil(
 		pos,
 		`["direction": 0, "damage": "undamaged"]`,
+		targetSlot,
 		[]GlobalAPI.AnvilChangeItemName{
 			{
 				Slot: targetSlot,
@@ -270,7 +271,7 @@ func (o *ChangeItemNameByUseAnvil) ChangeItemName(chat *defines.GameChat) {
 		return
 	}
 	// 读取新物品的数据
-	_, holder := o.apis.Resources.Container.Occupy()
+	holder := o.apis.Resources.Container.Occupy()
 	o.apis.OpenInventory()
 	dropResp, err := o.apis.DropItemAll(
 		protocol.StackRequestSlotInfo{
