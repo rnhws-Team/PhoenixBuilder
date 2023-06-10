@@ -52,6 +52,7 @@ func (o *ChangeItemNameByUseAnvil) Inject(frame defines.MainFrame) {
 func (o *ChangeItemNameByUseAnvil) ChangeItemNameRunner(chat *defines.GameChat) bool {
 	go func() {
 		if !o.lockDown.TryLock() {
+			o.Frame.GetGameControl().SayTo(chat.Name, "§c请求过于频繁§f，§c请稍后再试")
 			return
 		}
 		defer o.lockDown.Unlock()
