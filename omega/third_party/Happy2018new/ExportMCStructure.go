@@ -8,6 +8,7 @@ import (
 	"phoenixbuilder/minecraft/nbt"
 	"phoenixbuilder/minecraft/protocol/packet"
 	"phoenixbuilder/omega/defines"
+	"strings"
 	"sync"
 )
 
@@ -63,7 +64,7 @@ func (o *ExportMCStructure) ExportMCStructure(chat *defines.GameChat) {
 	resp, err := o.apis.SendStructureRequestWithResponce(
 		&packet.StructureTemplateDataRequest{
 			StructureName: chat.Msg[0],
-			RequestType:   packet.StructureTemplateRequestQuerySavedStructure,
+			RequestType:   packet.StructureTemplateRequestExportFromLoad,
 		},
 	)
 	if err != nil {
@@ -84,13 +85,13 @@ func (o *ExportMCStructure) ExportMCStructure(chat *defines.GameChat) {
 	// get binary data of mcstructure
 	if len(chat.Msg) < 2 {
 		err = o.Frame.WriteFileData(
-			fmt.Sprintf("%v.mcstructure", chat.Msg[0]),
+			fmt.Sprintf("%v.mcstructure", strings.ReplaceAll(chat.Msg[0], ":", "_")),
 			writer.Bytes(),
 		)
 		if err != nil {
 			panic(fmt.Sprintf("ExportMCStructure: %v", err))
 		}
-		o.Frame.GetGameControl().SayTo(chat.Name, fmt.Sprintf("§c已成功导出结构 %v ，它已被保存到 omega_storage/data/%v.mcstructure", chat.Msg[0], chat.Msg[0]))
+		o.Frame.GetGameControl().SayTo(chat.Name, fmt.Sprintf("§a已成功导出结构 §b%v §f，§a它已被保存到 §bomega_storage/data/%v.mcstructure", chat.Msg[0], strings.ReplaceAll(chat.Msg[0], ":", "_")))
 	} else {
 		err = o.Frame.WriteFileData(
 			chat.Msg[1],
@@ -99,7 +100,7 @@ func (o *ExportMCStructure) ExportMCStructure(chat *defines.GameChat) {
 		if err != nil {
 			panic(fmt.Sprintf("ExportMCStructure: %v", err))
 		}
-		o.Frame.GetGameControl().SayTo(chat.Name, fmt.Sprintf("§c已成功导出结构 %v ，它已被保存到 omega_storage/data/%v", chat.Msg[0], chat.Msg[1]))
+		o.Frame.GetGameControl().SayTo(chat.Name, fmt.Sprintf("§a已成功导出结构 §b%v §f，§a它已被保存到 §bomega_storage/data/%v", chat.Msg[0], chat.Msg[1]))
 	}
 	// write mcstructure to file
 }
