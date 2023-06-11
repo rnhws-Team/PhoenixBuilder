@@ -1,23 +1,21 @@
 package main
 
 import (
-	"fastbuilder-core/lib/minecraft/gophertunnel/protocol/packet"
-	"fastbuilder-core/lib/minecraft/neomega/omega"
 	"fmt"
+	"phoenixbuilder/lib/minecraft/neomega/omega"
+	"phoenixbuilder/minecraft/protocol/packet"
 	"strings"
 	"time"
 )
 
-type Omega = omega.MicroOmega
-
 type SetupHelper struct {
-	Omega
+	omega.MicroOmega
 	hasOpPrivilege bool
 }
 
-func NewSetupHelper(omega Omega) *SetupHelper {
+func NewSetupHelper(omega omega.MicroOmega) *SetupHelper {
 	helper := &SetupHelper{
-		Omega: omega,
+		MicroOmega: omega,
 	}
 	omega.GetGameListener().SetOnTypedPacketCallBack(packet.IDAdventureSettings, helper.onAdventurePacket)
 	return helper
@@ -52,8 +50,8 @@ func (o *SetupHelper) WaitOK() {
 	cheatOn := false
 	first := true
 	for !cheatOn {
-		o.GetGameControl().SendCmdAndInvokeOnResponse("testforblock ~~~ air 0", func(output *packet.CommandOutput) {
-			//fmt.Println(output)
+		o.GetGameControl().SendWSCmdAndInvokeOnResponse("testforblock ~~~ air 0", func(output *packet.CommandOutput) {
+			// fmt.Println(output)
 			if len(output.OutputMessages) > 0 {
 				if strings.Contains(output.OutputMessages[0].Message, "commands.generic.disabled") {
 					cheatOn = false

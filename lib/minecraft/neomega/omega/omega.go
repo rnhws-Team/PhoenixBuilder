@@ -1,7 +1,8 @@
 package omega
 
 import (
-	"fastbuilder-core/lib/minecraft/gophertunnel/protocol/packet"
+	"phoenixbuilder/minecraft/protocol/packet"
+
 	"github.com/google/uuid"
 )
 
@@ -29,11 +30,11 @@ type InteractCore interface {
 }
 
 type CmdSender interface {
-	SendCmd(cmd string)
+	SendWSCmd(cmd string)
 	SendCmdWithUUID(cmd string, ud uuid.UUID, ws bool)
 	SendWOCmd(cmd string)
-	SendCmdAndInvokeOnResponse(string, func(output *packet.CommandOutput))
-	SendCmdAndInvokeOnResponseWithFeedback(string, func(output *packet.CommandOutput))
+	SendWSCmdAndInvokeOnResponse(string, func(output *packet.CommandOutput))
+	SendPlayerCmdAndInvokeOnResponseWithFeedback(string, func(output *packet.CommandOutput))
 }
 
 type InfoSender interface {
