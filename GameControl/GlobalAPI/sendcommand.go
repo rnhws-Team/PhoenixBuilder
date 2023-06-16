@@ -23,7 +23,7 @@ func (g *GlobalAPI) SendSettingsCommand(command string, sendDimensionalCmd bool)
 	return nil
 }
 
-// 向租赁服发送正常的命令且无视返回值
+// 以玩家的身份向租赁服发送命令且无视返回值
 func (g *GlobalAPI) SendCommand(command string, uniqueId uuid.UUID) error {
 	requestId, _ := uuid.Parse("96045347-a6a3-4114-94c0-1bc4cc561694")
 	err := g.WritePacket(&packet.CommandRequest{
@@ -61,11 +61,11 @@ func (g *GlobalAPI) SendWSCommand(command string, uniqueId uuid.UUID) error {
 	return nil
 }
 
-// 向租赁服发送正常的命令且获取返回值
+// 以玩家的身份向租赁服发送命令且获取返回值
 func (g *GlobalAPI) SendCommandWithResponce(command string) (packet.CommandOutput, error) {
 	uniqueId, err := uuid.NewUUID()
 	if err != nil || uniqueId == uuid.Nil {
-		return g.SendWSCommandWithResponce(command)
+		return g.SendCommandWithResponce(command)
 	}
 	err = g.Resources.Command.WriteRequest(uniqueId)
 	if err != nil {
