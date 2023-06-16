@@ -430,7 +430,7 @@ func EstablishConnectionAndInitEnv(env *environment.PBEnvironment) {
 	hostBridgeGamma := env.ScriptBridge.(*script_bridge.HostBridgeGamma)
 	hostBridgeGamma.HostSetSendCmdFunc(func(mcCmd string, waitResponse bool) *packet.CommandOutput {
 		ud, _ := uuid.NewUUID()
-		if waitResponse {
+		if !waitResponse {
 			env.GlobalAPI.(*GlobalAPI.GlobalAPI).SendCommand(mcCmd, ud)
 			return nil
 		}
