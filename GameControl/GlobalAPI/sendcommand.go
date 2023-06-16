@@ -29,7 +29,7 @@ func (g *GlobalAPI) SendCommand(command string, uniqueId uuid.UUID) error {
 	err := g.WritePacket(&packet.CommandRequest{
 		CommandLine: command,
 		CommandOrigin: protocol.CommandOrigin{
-			Origin:    protocol.CommandOriginAutomationPlayer,
+			Origin:    protocol.CommandOriginPlayer,
 			UUID:      uniqueId,
 			RequestID: requestId.String(),
 		},
