@@ -271,6 +271,7 @@ func EnterWorkerThread(env *environment.PBEnvironment, breaker chan struct{}) {
 				commandSender.Output(fmt.Sprintf("%s: %v", I18n.T(I18n.PositionGot_End), pos))
 				break
 			}
+			SubFunc(commandSender, p)
 		case *packet.ActorEvent:
 			if p.EventType == packet.ActorEventDeath && p.EntityRuntimeID == conn.GameData().EntityRuntimeID {
 				conn.WritePacket(&packet.PlayerAction{
