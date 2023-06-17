@@ -99,29 +99,30 @@ func CreateLegacyExportTask(commandLine string, env *environment.PBEnvironment) 
 				}
 			}
 			// 等待当前被访问的区块加载完成
-			ExportWaiter = make(chan map[string]interface{})
-			env.Connection.(*minecraft.Conn).WritePacket(&packet.StructureTemplateDataRequest{
-				StructureName: "mystructure:aaaaa",
-				Position:      protocol.BlockPos{int32(value.BeginX), int32(value.BeginY), int32(value.BeginZ)},
-				Settings: protocol.StructureSettings{
-					PaletteName:               "default",
-					IgnoreEntities:            true,
-					IgnoreBlocks:              false,
-					Size:                      protocol.BlockPos{int32(value.SizeX), int32(value.SizeY), int32(value.SizeZ)},
-					Offset:                    protocol.BlockPos{0, 0, 0},
-					LastEditingPlayerUniqueID: env.Connection.(*minecraft.Conn).GameData().EntityUniqueID,
-					Rotation:                  0,
-					Mirror:                    0,
-					Integrity:                 100,
-					Seed:                      0,
-					AllowNonTickingChunks:     false,
+			holder := env.GlobalAPI.(*GlobalAPI.GlobalAPI).Resources.Structure.Occupy()
+			exportData, _ := env.GlobalAPI.(*GlobalAPI.GlobalAPI).SendStructureRequestWithResponce(
+				&packet.StructureTemplateDataRequest{
+					StructureName: "mystructure:aaaaa",
+					Position:      protocol.BlockPos{int32(value.BeginX), int32(value.BeginY), int32(value.BeginZ)},
+					Settings: protocol.StructureSettings{
+						PaletteName:               "default",
+						IgnoreEntities:            true,
+						IgnoreBlocks:              false,
+						Size:                      protocol.BlockPos{int32(value.SizeX), int32(value.SizeY), int32(value.SizeZ)},
+						Offset:                    protocol.BlockPos{0, 0, 0},
+						LastEditingPlayerUniqueID: env.Connection.(*minecraft.Conn).GameData().EntityUniqueID,
+						Rotation:                  0,
+						Mirror:                    0,
+						Integrity:                 100,
+						Seed:                      0,
+						AllowNonTickingChunks:     false,
+					},
+					RequestType: packet.StructureTemplateRequestExportFromSave,
 				},
-				RequestType: packet.StructureTemplateRequestExportFromSave,
-			})
-			exportData := <-ExportWaiter
-			close(ExportWaiter)
+			)
+			env.GlobalAPI.(*GlobalAPI.GlobalAPI).Resources.Structure.Release(holder)
 			// 获取 mcstructure
-			got, err := mcstructure.GetMCStructureData(value, exportData)
+			got, err := mcstructure.GetMCStructureData(value, exportData.StructureTemplate)
 			if err != nil {
 				panic(err)
 			} else {

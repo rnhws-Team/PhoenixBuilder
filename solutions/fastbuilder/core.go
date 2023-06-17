@@ -27,7 +27,6 @@ import (
 	"phoenixbuilder/fastbuilder/uqHolder"
 	"phoenixbuilder/fastbuilder/utils"
 	"phoenixbuilder/io/commands"
-	"phoenixbuilder/io/special_tasks"
 	"phoenixbuilder/minecraft"
 	"phoenixbuilder/minecraft/protocol"
 	"phoenixbuilder/minecraft/protocol/packet"
@@ -232,9 +231,6 @@ func EnterWorkerThread(env *environment.PBEnvironment, breaker chan struct{}) {
 		// 	pterm.Info.Println("ClientCacheStatus", p)
 		// case *packet.ClientCacheBlobStatus:
 		// 	pterm.Info.Println("ClientCacheBlobStatus", p)
-		case *packet.StructureTemplateDataResponse:
-			special_tasks.ExportWaiter <- p.StructureTemplate
-			break
 		case *packet.Text:
 			if p.TextType == packet.TextTypeChat {
 				if args.InGameResponse() {
