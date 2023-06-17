@@ -1,18 +1,20 @@
-//go:build !is_tweak
+//go:build is_tweak
 
 package interfaces
 
 import (
 	"sync"
+
+	"github.com/google/uuid"
 )
 
 type CommandSender interface {
-	// GetUUIDMap() *sync.Map
-	// ClearUUIDMap()
+	GetUUIDMap() *sync.Map
+	ClearUUIDMap()
 	GetBlockUpdateSubscribeMap() *sync.Map
-	// SendCommand(string,uuid.UUID) error
-	// SendWSCommand(string,uuid.UUID) error
-	// SendSizukanaCommand(string) error
+	SendCommand(string, uuid.UUID) error
+	SendWSCommand(string, uuid.UUID) error
+	SendSizukanaCommand(string) error
 	SendChat(string) error
 	Output(string) error
 	WorldChatOutput(string, string) error

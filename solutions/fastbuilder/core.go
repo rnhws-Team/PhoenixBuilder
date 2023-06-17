@@ -27,7 +27,6 @@ import (
 	"phoenixbuilder/fastbuilder/uqHolder"
 	"phoenixbuilder/fastbuilder/utils"
 	"phoenixbuilder/io/commands"
-	"phoenixbuilder/io/special_tasks"
 	"phoenixbuilder/minecraft"
 	"phoenixbuilder/minecraft/protocol"
 	"phoenixbuilder/minecraft/protocol/packet"
@@ -67,18 +66,10 @@ func EnterReadlineThread(env *environment.PBEnvironment, breaker chan struct{}) 
 			continue
 		}
 		if cmd[0] == '.' {
-			ud, _ := uuid.NewUUID()
-			chann := make(chan *packet.CommandOutput)
-			commandSender.UUIDMap.Store(ud.String(), chann)
-			commandSender.SendCommand(cmd[1:], ud)
-			resp := <-chann
+			resp, _ := env.GlobalAPI.(*GlobalAPI.GlobalAPI).SendCommandWithResponce(cmd[1:])
 			fmt.Printf("%+v\n", resp)
 		} else if cmd[0] == '!' {
-			ud, _ := uuid.NewUUID()
-			chann := make(chan *packet.CommandOutput)
-			commandSender.UUIDMap.Store(ud.String(), chann)
-			commandSender.SendWSCommand(cmd[1:], ud)
-			resp := <-chann
+			resp, _ := env.GlobalAPI.(*GlobalAPI.GlobalAPI).SendWSCommandWithResponce(cmd[1:])
 			fmt.Printf("%+v\n", resp)
 		}
 		if cmd == "move" {
@@ -240,9 +231,6 @@ func EnterWorkerThread(env *environment.PBEnvironment, breaker chan struct{}) {
 		// 	pterm.Info.Println("ClientCacheStatus", p)
 		// case *packet.ClientCacheBlobStatus:
 		// 	pterm.Info.Println("ClientCacheBlobStatus", p)
-		case *packet.StructureTemplateDataResponse:
-			special_tasks.ExportWaiter <- p.StructureTemplate
-			break
 		case *packet.Text:
 			if p.TextType == packet.TextTypeChat {
 				if args.InGameResponse() {
@@ -283,11 +271,7 @@ func EnterWorkerThread(env *environment.PBEnvironment, breaker chan struct{}) {
 				commandSender.Output(fmt.Sprintf("%s: %v", I18n.T(I18n.PositionGot_End), pos))
 				break
 			}
-			pr, ok := commandSender.UUIDMap.LoadAndDelete(p.CommandOrigin.UUID.String())
-			if ok {
-				pu := pr.(chan *packet.CommandOutput)
-				pu <- p
-			}
+			SubFunc(commandSender, p)
 		case *packet.ActorEvent:
 			if p.EventType == packet.ActorEventDeath && p.EntityRuntimeID == conn.GameData().EntityRuntimeID {
 				conn.WritePacket(&packet.PlayerAction{
@@ -443,17 +427,12 @@ func EstablishConnectionAndInitEnv(env *environment.PBEnvironment) {
 	hostBridgeGamma := env.ScriptBridge.(*script_bridge.HostBridgeGamma)
 	hostBridgeGamma.HostSetSendCmdFunc(func(mcCmd string, waitResponse bool) *packet.CommandOutput {
 		ud, _ := uuid.NewUUID()
-		chann := make(chan *packet.CommandOutput)
-		if waitResponse {
-			commandSender.UUIDMap.Store(ud.String(), chann)
-		}
-		commandSender.SendCommand(mcCmd, ud)
-		if waitResponse {
-			resp := <-chann
-			return resp
-		} else {
+		if !waitResponse {
+			env.GlobalAPI.(*GlobalAPI.GlobalAPI).SendCommand(mcCmd, ud)
 			return nil
 		}
+		resp, _ := env.GlobalAPI.(*GlobalAPI.GlobalAPI).SendCommandWithResponce(mcCmd)
+		return &resp
 	})
 	hostBridgeGamma.HostConnectEstablished()
 	defer hostBridgeGamma.HostConnectTerminate()

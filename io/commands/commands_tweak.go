@@ -1,4 +1,4 @@
-//go:build !is_tweak
+//go:build is_tweak
 
 package commands
 
@@ -9,6 +9,7 @@ import (
 
 type CommandSender struct {
 	env                     *environment.PBEnvironment
+	UUIDMap                 sync.Map
 	BlockUpdateSubscribeMap sync.Map
 }
 
