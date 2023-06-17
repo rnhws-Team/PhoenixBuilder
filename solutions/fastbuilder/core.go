@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"phoenixbuilder/GameControl/GlobalAPI"
+	"phoenixbuilder/GameControl/ResourcesControlCenter"
 	"phoenixbuilder/fastbuilder/args"
 	"phoenixbuilder/fastbuilder/configuration"
 	"phoenixbuilder/fastbuilder/core"
@@ -36,8 +38,6 @@ import (
 	"runtime"
 	"strings"
 	"time"
-
-	blockNBT_API "phoenixbuilder/fastbuilder/bdump/blockNBT/API"
 
 	"github.com/google/uuid"
 	"github.com/pterm/pterm"
@@ -131,7 +131,7 @@ func EnterWorkerThread(env *environment.PBEnvironment, breaker chan struct{}) {
 			panic(err)
 		}
 
-		env.NewUQHolder.(*blockNBT_API.PacketHandleResult).HandlePacket(&pk) // for blockNBT
+		env.ResourcesUpdater.(func(pk *packet.Packet))(&pk)
 
 		{
 			p, ok := pk.(*packet.PyRpc)
@@ -408,9 +408,18 @@ func EstablishConnectionAndInitEnv(env *environment.PBEnvironment) {
 	env.UQHolder.(*uqHolder.UQHolder).UpdateFromConn(conn)
 	env.UQHolder.(*uqHolder.UQHolder).CurrentTick = 0
 
-	env.NewUQHolder = &blockNBT_API.PacketHandleResult{}
-	env.NewUQHolder.(*blockNBT_API.PacketHandleResult).InitValue()
-	// for blockNBT
+	env.Resources = &ResourcesControlCenter.Resources{}
+	env.ResourcesUpdater = env.Resources.(*ResourcesControlCenter.Resources).Init()
+	env.GlobalAPI = &GlobalAPI.GlobalAPI{
+		WritePacket: env.Connection.(*minecraft.Conn).WritePacket,
+		BotInfo: GlobalAPI.BotInfo{
+			BotName:      env.Connection.(*minecraft.Conn).IdentityData().DisplayName,
+			BotIdentity:  env.Connection.(*minecraft.Conn).IdentityData().Identity,
+			BotRunTimeID: env.Connection.(*minecraft.Conn).GameData().EntityRuntimeID,
+			BotUniqueID:  env.Connection.(*minecraft.Conn).GameData().EntityUniqueID,
+		},
+		Resources: env.Resources.(*ResourcesControlCenter.Resources),
+	}
 
 	if args.ShouldEnableOmegaSystem() {
 		_, cb := embed.EnableOmegaSystem(env)
