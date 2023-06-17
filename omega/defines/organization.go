@@ -2,7 +2,6 @@ package defines
 
 import (
 	"phoenixbuilder/GameControl/GlobalAPI"
-	"phoenixbuilder/GameControl/ResourcesControlCenter"
 	"phoenixbuilder/fastbuilder/uqHolder"
 	"phoenixbuilder/minecraft/protocol"
 	"phoenixbuilder/minecraft/protocol/packet"
@@ -96,7 +95,6 @@ type CtxProvider interface {
 	GetContext(key string) (entry interface{}, hasK bool)
 	SetContext(key string, entry interface{})
 	GetUQHolder() *uqHolder.UQHolder
-	GetResources() *ResourcesControlCenter.Resources
 }
 
 // ConfigProvider 是帮助一个插件获得和修改别的插件的接口
