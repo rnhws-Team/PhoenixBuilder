@@ -4,6 +4,8 @@ package interfaces
 
 import (
 	"sync"
+
+	"github.com/google/uuid"
 )
 
 type CommandSender interface {
