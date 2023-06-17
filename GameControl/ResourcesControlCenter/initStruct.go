@@ -4,8 +4,6 @@ import (
 	"phoenixbuilder/minecraft/protocol"
 	"phoenixbuilder/minecraft/protocol/packet"
 	"sync"
-
-	"github.com/google/uuid"
 )
 
 // Resources 最多只能被初始化一次，因为资源在 PhoenixBuilder 中是唯一的
@@ -26,83 +24,37 @@ func (r *Resources) Init() func(pk *packet.Packet) {
 	// test if has been inited
 	r.verified = true
 	// verified
-	r.Command = commandRequestWithResponce{
-		commandRequest: struct {
-			lockDown sync.RWMutex
-			datas    map[uuid.UUID]*sync.Mutex
-		}{
-			lockDown: sync.RWMutex{},
-			datas:    make(map[uuid.UUID]*sync.Mutex),
+	*r = Resources{
+		Command: commandRequestWithResponce{
+			requestWithResponce: sync.Map{},
 		},
-		commandResponce: struct {
-			lockDown sync.RWMutex
-			datas    map[uuid.UUID]packet.CommandOutput
-		}{
+		Inventory: inventoryContents{
 			lockDown: sync.RWMutex{},
-			datas:    make(map[uuid.UUID]packet.CommandOutput),
+			datas:    make(map[uint32]map[uint8]protocol.ItemInstance),
+		},
+		ItemStackOperation: itemStackReuqestWithResponce{
+			requestWithResponce: sync.Map{},
+			currentRequestID:    1,
+		},
+		Container: container{
+			lockDown:           sync.RWMutex{},
+			containerOpenData:  nil,
+			containerCloseData: nil,
+			responded:          make(chan bool, 1),
+			resourcesOccupy: resourcesOccupy{
+				lockDown: sync.Mutex{},
+				holder:   "",
+			},
+		},
+		Structure: mcstructure{
+			resourcesOccupy: resourcesOccupy{
+				lockDown: sync.Mutex{},
+				holder:   "",
+			},
+			resp: make(chan packet.StructureTemplateDataResponse, 1),
 		},
 	}
-	// Command
-	r.Inventory = inventoryContents{
-		lockDown: sync.RWMutex{},
-		datas:    make(map[uint32]map[uint8]protocol.ItemInstance),
-	}
-	// Inventory
-	r.ItemStackOperation = itemStackReuqestWithResponce{
-		itemStackRequest: struct {
-			lockDown sync.RWMutex
-			datas    map[int32]singleItemStackRequest
-		}{
-			lockDown: sync.RWMutex{},
-			datas:    make(map[int32]singleItemStackRequest),
-		},
-		itemStackResponce: struct {
-			lockDown sync.RWMutex
-			datas    map[int32]protocol.ItemStackResponse
-		}{
-			lockDown: sync.RWMutex{},
-			datas:    make(map[int32]protocol.ItemStackResponse),
-		},
-		currentRequestID: 1,
-	}
-	// ItemStackOperation
-	r.Container = container{
-		containerOpen: struct {
-			lockDown sync.RWMutex
-			datas    *packet.ContainerOpen
-		}{
-			lockDown: sync.RWMutex{},
-			datas:    nil,
-		},
-		containerClose: struct {
-			lockDown sync.RWMutex
-			datas    *packet.ContainerClose
-		}{
-			lockDown: sync.RWMutex{},
-			datas:    nil,
-		},
-		awaitChanges: sync.Mutex{},
-		resourcesOccupy: resourcesOccupy{
-			lockDown: sync.Mutex{},
-			holder:   "",
-		},
-	}
-	// Container
-	r.Structure = mcstructure{
-		resourcesOccupy: resourcesOccupy{
-			lockDown: sync.Mutex{},
-			holder:   "",
-		},
-		responce: struct {
-			lockDown sync.RWMutex
-			datas    *packet.StructureTemplateDataResponse
-		}{
-			lockDown: sync.RWMutex{},
-			datas:    nil,
-		},
-		awaitChanges: sync.Mutex{},
-	}
-	// Structure
+	// init struct
 	return r.handlePacket
 	// return
 }

@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"fmt"
 	"phoenixbuilder/GameControl/GlobalAPI"
-	"phoenixbuilder/GameControl/ResourcesControlCenter"
 	"phoenixbuilder/fastbuilder/environment"
 	"phoenixbuilder/fastbuilder/function"
 	"phoenixbuilder/fastbuilder/uqHolder"
@@ -52,15 +51,7 @@ func (rc *EmbeddedAdaptor) GetInitUQHolderCopy() *uqHolder.UQHolder {
 }
 
 func (rc *EmbeddedAdaptor) GetInteraction() *GlobalAPI.GlobalAPI {
-	return &GlobalAPI.GlobalAPI{
-		BotInfo: GlobalAPI.BotInfo{
-			BotName:      rc.env.Connection.(*minecraft.Conn).IdentityData().DisplayName,
-			BotIdentity:  rc.env.Connection.(*minecraft.Conn).IdentityData().Identity,
-			BotUniqueID:  rc.env.Connection.(*minecraft.Conn).GameData().EntityUniqueID,
-			BotRunTimeID: rc.env.Connection.(*minecraft.Conn).GameData().EntityRuntimeID,
-		},
-		Resources: rc.env.Resources.(*ResourcesControlCenter.Resources),
-	}
+	return rc.env.GlobalAPI.(*GlobalAPI.GlobalAPI)
 }
 
 func (rc *EmbeddedAdaptor) Write(pkt mc_packet.Packet) (err error) {

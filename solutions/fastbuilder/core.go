@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"phoenixbuilder/GameControl/GlobalAPI"
 	"phoenixbuilder/GameControl/ResourcesControlCenter"
 	"phoenixbuilder/fastbuilder/args"
 	"phoenixbuilder/fastbuilder/configuration"
@@ -26,7 +27,6 @@ import (
 	"phoenixbuilder/fastbuilder/uqHolder"
 	"phoenixbuilder/fastbuilder/utils"
 	"phoenixbuilder/io/commands"
-	"phoenixbuilder/io/special_tasks"
 	"phoenixbuilder/minecraft"
 	"phoenixbuilder/minecraft/protocol"
 	"phoenixbuilder/minecraft/protocol/packet"
@@ -66,18 +66,10 @@ func EnterReadlineThread(env *environment.PBEnvironment, breaker chan struct{}) 
 			continue
 		}
 		if cmd[0] == '.' {
-			ud, _ := uuid.NewUUID()
-			chann := make(chan *packet.CommandOutput)
-			commandSender.UUIDMap.Store(ud.String(), chann)
-			commandSender.SendCommand(cmd[1:], ud)
-			resp := <-chann
+			resp, _ := env.GlobalAPI.(*GlobalAPI.GlobalAPI).SendCommandWithResponce(cmd[1:])
 			fmt.Printf("%+v\n", resp)
 		} else if cmd[0] == '!' {
-			ud, _ := uuid.NewUUID()
-			chann := make(chan *packet.CommandOutput)
-			commandSender.UUIDMap.Store(ud.String(), chann)
-			commandSender.SendWSCommand(cmd[1:], ud)
-			resp := <-chann
+			resp, _ := env.GlobalAPI.(*GlobalAPI.GlobalAPI).SendWSCommandWithResponce(cmd[1:])
 			fmt.Printf("%+v\n", resp)
 		}
 		if cmd == "move" {
@@ -239,9 +231,6 @@ func EnterWorkerThread(env *environment.PBEnvironment, breaker chan struct{}) {
 		// 	pterm.Info.Println("ClientCacheStatus", p)
 		// case *packet.ClientCacheBlobStatus:
 		// 	pterm.Info.Println("ClientCacheBlobStatus", p)
-		case *packet.StructureTemplateDataResponse:
-			special_tasks.ExportWaiter <- p.StructureTemplate
-			break
 		case *packet.Text:
 			if p.TextType == packet.TextTypeChat {
 				if args.InGameResponse() {
@@ -281,11 +270,6 @@ func EnterWorkerThread(env *environment.PBEnvironment, breaker chan struct{}) {
 				}
 				commandSender.Output(fmt.Sprintf("%s: %v", I18n.T(I18n.PositionGot_End), pos))
 				break
-			}
-			pr, ok := commandSender.UUIDMap.LoadAndDelete(p.CommandOrigin.UUID.String())
-			if ok {
-				pu := pr.(chan *packet.CommandOutput)
-				pu <- p
 			}
 		case *packet.ActorEvent:
 			if p.EventType == packet.ActorEventDeath && p.EntityRuntimeID == conn.GameData().EntityRuntimeID {
@@ -402,13 +386,23 @@ func EstablishConnectionAndInitEnv(env *environment.PBEnvironment) {
 		}
 	}
 	env.Connection = conn
-	pterm.Println(I18n.T(I18n.ConnectionEstablished))
+	pterm.Println(pterm.Yellow(I18n.T(I18n.ConnectionEstablished)))
 	env.UQHolder = uqHolder.NewUQHolder(conn.GameData().EntityRuntimeID)
 	env.UQHolder.(*uqHolder.UQHolder).UpdateFromConn(conn)
 	env.UQHolder.(*uqHolder.UQHolder).CurrentTick = 0
 
 	env.Resources = &ResourcesControlCenter.Resources{}
 	env.ResourcesUpdater = env.Resources.(*ResourcesControlCenter.Resources).Init()
+	env.GlobalAPI = &GlobalAPI.GlobalAPI{
+		WritePacket: env.Connection.(*minecraft.Conn).WritePacket,
+		BotInfo: GlobalAPI.BotInfo{
+			BotName:      env.Connection.(*minecraft.Conn).IdentityData().DisplayName,
+			BotIdentity:  env.Connection.(*minecraft.Conn).IdentityData().Identity,
+			BotRunTimeID: env.Connection.(*minecraft.Conn).GameData().EntityRuntimeID,
+			BotUniqueID:  env.Connection.(*minecraft.Conn).GameData().EntityUniqueID,
+		},
+		Resources: env.Resources.(*ResourcesControlCenter.Resources),
+	}
 
 	if args.ShouldEnableOmegaSystem() {
 		_, cb := embed.EnableOmegaSystem(env)
@@ -432,17 +426,12 @@ func EstablishConnectionAndInitEnv(env *environment.PBEnvironment) {
 	hostBridgeGamma := env.ScriptBridge.(*script_bridge.HostBridgeGamma)
 	hostBridgeGamma.HostSetSendCmdFunc(func(mcCmd string, waitResponse bool) *packet.CommandOutput {
 		ud, _ := uuid.NewUUID()
-		chann := make(chan *packet.CommandOutput)
-		if waitResponse {
-			commandSender.UUIDMap.Store(ud.String(), chann)
-		}
-		commandSender.SendCommand(mcCmd, ud)
-		if waitResponse {
-			resp := <-chann
-			return resp
-		} else {
+		if !waitResponse {
+			env.GlobalAPI.(*GlobalAPI.GlobalAPI).SendCommand(mcCmd, ud)
 			return nil
 		}
+		resp, _ := env.GlobalAPI.(*GlobalAPI.GlobalAPI).SendCommandWithResponce(mcCmd)
+		return &resp
 	})
 	hostBridgeGamma.HostConnectEstablished()
 	defer hostBridgeGamma.HostConnectTerminate()

@@ -4,8 +4,6 @@ import (
 	"phoenixbuilder/minecraft/protocol"
 	"phoenixbuilder/minecraft/protocol/packet"
 	"sync"
-
-	"github.com/google/uuid"
 )
 
 // ------------------------- Resources -------------------------
@@ -36,22 +34,9 @@ type Resources struct {
 
 // 存放命令请求及结果
 type commandRequestWithResponce struct {
-	// 命令请求队列
-	commandRequest struct {
-		// 防止并发读写而设置的读写锁
-		lockDown sync.RWMutex
-		// 存放命令请求的等待队列。
-		// 每次写入请求后将会自动为此请求上锁以便于阻塞
-		datas map[uuid.UUID]*sync.Mutex
-	}
-	// 命令请求的返回值
-	commandResponce struct {
-		// 防止并发读写而设置的读写锁
-		lockDown sync.RWMutex
-		// 存放命令返回值。
-		// 每次写入返回值后将会自动为对应等待队列中的读写锁解锁
-		datas map[uuid.UUID]packet.CommandOutput
-	}
+	// 存放命令请求及返回值队列。
+	// 数据类型为 map[uuid.UUID](chan packet.CommandOutput)
+	requestWithResponce sync.Map
 }
 
 // ------------------------- inventoryContents -------------------------
@@ -76,22 +61,9 @@ type inventoryContents struct {
 因此，为了绝对的安全，如果尝试绕过相关实现而直接发送物品操作数据包，则会造成程序惊慌。
 */
 type itemStackReuqestWithResponce struct {
-	// 物品操作请求队列
-	itemStackRequest struct {
-		// 防止并发读写而设置的读写锁
-		lockDown sync.RWMutex
-		// 存放物品操作请求的等待队列。
-		// 每次写入请求后将会自动为此请求上锁以便于阻塞
-		datas map[int32]singleItemStackRequest
-	}
-	// 物品操作的结果
-	itemStackResponce struct {
-		// 防止并发读写而设置的读写锁
-		lockDown sync.RWMutex
-		// 存放物品操作的结果。
-		// 每次写入返回值后将会自动为对应等待队列中的读写锁解锁。
-		datas map[int32]protocol.ItemStackResponse
-	}
+	// 存放物品操作的请求队列。
+	// 数据类型为 map[int32]singleItemStackRequestWithResponce
+	requestWithResponce sync.Map
 	/*
 		记录已累计的 RequestID 。
 
@@ -110,19 +82,14 @@ type itemStackReuqestWithResponce struct {
 	currentRequestID int32
 }
 
-// ------------------------- container -------------------------
-
-// 描述一个容器 ID
-type ContainerID uint8
-
 // 每个物品操作请求都会使用这样一个结构体，它用于描述单个的物品操作请求
-type singleItemStackRequest struct {
-	// 每个物品操作请求在发送前都应该上锁它以便于后续等待返回值时的阻塞
-	lockDown *sync.Mutex
+type singleItemStackRequestWithResponce struct {
+	// 描述物品操作请求的返回值
+	resp chan protocol.ItemStackResponse
 	// 描述多个库存(容器)中物品的变动结果。
 	// 租赁服不会在返回 ItemStackResponce 时返回完整的物品数据，因此需要您提供对应
 	// 槽位的更改结果以便于我们依此更新本地存储的库存数据
-	datas map[ContainerID]StackRequestContainerInfo
+	howToChange map[ContainerID]StackRequestContainerInfo
 }
 
 // 描述单个库存(容器)中物品的变动结果
@@ -134,6 +101,11 @@ type StackRequestContainerInfo struct {
 	// 这些数据会在租赁服发回 ItemStackResponce 后被重新设置
 	ChangeResult map[uint8]protocol.ItemInstance
 }
+
+// ------------------------- container -------------------------
+
+// 描述一个容器 ID
+type ContainerID uint8
 
 /*
 存储容器的 打开/关闭 状态，同时存储容器资源的占用状态。
@@ -148,29 +120,24 @@ type StackRequestContainerInfo struct {
 然后再发送相应数据包，完成后再释放此公用资源
 */
 type container struct {
-	// 容器被打开时的数据
-	containerOpen struct {
-		// 防止并发读写而设置的读写锁
-		lockDown sync.RWMutex
-		// 当客户端打开容器后，租赁服会以此数据包回应，届时此变量将被赋值。
-		// 当容器被关闭或从未被打开，则此变量将会为 nil
-		datas *packet.ContainerOpen
-	}
-	// 容器被关闭时的数据
-	containerClose struct {
-		// 防止并发读写而设置的读写锁
-		lockDown sync.RWMutex
-		/*
-			客户端可以使用该数据包关闭已经打开的容器，
-			而后，租赁服会以相同的数据包回应容器的关闭。
+	// 防止并发读写而安排的读写锁
+	lockDown sync.RWMutex
+	// 存放容器被打开时的数据。
+	// 当客户端打开容器后，租赁服会以此数据包回应，届时此变量将被赋值。
+	// 当容器被关闭或从未被打开，则此变量将会为 nil
+	containerOpenData *packet.ContainerOpen
+	/*
+		存放容器被关闭时的数据。
 
-			当侦测到来自租赁服的响应，此变量将被赋值。
-			当容器被打开或从未被关闭，则此变量将会为 nil
-		*/
-		datas *packet.ContainerClose
-	}
-	// 其他实现在打开或关闭容器后可能需要等待回应，此互斥锁便是为了完成这一实现
-	awaitChanges sync.Mutex
+		客户端可以使用该数据包关闭已经打开的容器，
+		而后，租赁服会以相同的数据包回应容器的关闭。
+
+		当侦测到来自租赁服的响应，此变量将被赋值。
+		当容器被打开或从未被关闭，则此变量将会为 nil
+	*/
+	containerCloseData *packet.ContainerClose
+	// 其他实现在打开或关闭容器后可能需要等待回应，此管道便是为了完成这一实现
+	responded chan bool
 	// 描述容器资源的占用状态及占用者
 	resourcesOccupy
 }
@@ -181,15 +148,8 @@ type container struct {
 type mcstructure struct {
 	// 描述结构资源的占用状态及占用者
 	resourcesOccupy
-	// 保存结构请求的返回值
-	responce struct {
-		// 防止并发读写而设置的读写锁
-		lockDown sync.RWMutex
-		// 当客户端请求结构数据后，租赁服会以此数据包回应，届时此变量将被赋值
-		datas *packet.StructureTemplateDataResponse
-	}
-	// 其他实现在请求结构后可能需要等待回应，此互斥锁便是为了完成这一实现
-	awaitChanges sync.Mutex
+	// 保存结构请求的响应体
+	resp chan packet.StructureTemplateDataResponse
 }
 
 // ------------------------- END -------------------------
