@@ -19,7 +19,6 @@ func (sender *CommandSender) GetBlockUpdateSubscribeMap() *sync.Map {
 	return &sender.BlockUpdateSubscribeMap
 }
 
-/*
 func (sender *CommandSender) GetUUIDMap() *sync.Map {
 	return &sender.UUIDMap
 }
@@ -46,7 +45,6 @@ func (sender *CommandSender) SendSizukanaCommand(command string) error {
 func (sender *CommandSender) SendDimensionalCommand(command string) error {
 	return sender.SendSizukanaCommand(command)
 }
-*/
 
 func (sender *CommandSender) SendChat(content string) error {
 	C.phoenixbuilder_send_chat(C.CString(content))
