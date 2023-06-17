@@ -3,7 +3,6 @@
 package commands
 
 import (
-	"github.com/google/uuid"
 	"sync"
 )
 
