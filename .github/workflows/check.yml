@@ -3,6 +3,8 @@ name: Check
 on:
   push:
     branches: [ Mainfull ]
+  pull_request:
+    types: [opened, edited]
 
 jobs:
   phoenixbuilder-check:
