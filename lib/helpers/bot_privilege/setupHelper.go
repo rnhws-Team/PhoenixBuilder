@@ -1,7 +1,6 @@
 package bot_privilege
 
 import (
-	"errors"
 	"fmt"
 	"phoenixbuilder/lib/minecraft/neomega/omega"
 	"phoenixbuilder/minecraft/protocol/packet"
@@ -43,10 +42,7 @@ func (o *SetupHelper) lostPrivilege() {
 	panic(fmt.Errorf("机器人OP权限被关闭"))
 }
 
-var ErrMaximumWaitTimeExeceed = errors.New("maximum wait time execeed")
-
-func (o *SetupHelper) WaitOK(maximumWaitTime time.Duration) {
-	startTime := time.Now()
+func (o *SetupHelper) WaitOK() {
 	time.Sleep(3 * time.Second)
 	for !o.hasOpPrivilege {
 		o.GetGameControl().SendWSCmdAndInvokeOnResponse("tp @s ~~~", func(output *packet.CommandOutput) {
@@ -56,9 +52,6 @@ func (o *SetupHelper) WaitOK(maximumWaitTime time.Duration) {
 		})
 		o.GetGameControl().BotSay("请给予机器人管理员权限")
 		time.Sleep(1 * time.Second)
-		if maximumWaitTime > 0 && time.Since(startTime) > maximumWaitTime {
-			panic(ErrMaximumWaitTimeExeceed)
-		}
 	}
 	first := true
 	for !o.cheatOn {
@@ -87,9 +80,6 @@ func (o *SetupHelper) WaitOK(maximumWaitTime time.Duration) {
 		time.Sleep(3 * time.Second)
 		if !o.cheatOn {
 			o.GetGameControl().BotSay("请打开作弊模式")
-		}
-		if maximumWaitTime > 0 && time.Since(startTime) > maximumWaitTime {
-			panic(ErrMaximumWaitTimeExeceed)
 		}
 	}
 
