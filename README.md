@@ -1,4 +1,3 @@
-<h1 align="center">请注意，此分支以停止维护!</h1>
 <h1 align="center">PhoenixBuilder-Dev</h1>
 <p align="center">
   <a href="https://github.com/rnhws-Team/PhoenixBuilder/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-AGPL%203.0-brightgreen.svg?style=flat" alt="LICENSE"></a>
