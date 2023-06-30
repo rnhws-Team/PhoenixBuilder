@@ -41,7 +41,7 @@ func setup() {
 
 func display_info() {
 	pterm.DefaultBox.Println(pterm.LightCyan("https://github.com/rnhws-Team/PhoenixBuilder"))
-	pterm.Println(pterm.Yellow("PhoenixBuilder Dev " + args.GetFBVersion()))
+	pterm.Println(pterm.Yellow("PhoenixBuilder Dev " + args.FBVersion))
 	if I18n.ShouldDisplaySpecial() {
 		fmt.Printf("%s", I18n.T(I18n.Special_Startup))
 	}
