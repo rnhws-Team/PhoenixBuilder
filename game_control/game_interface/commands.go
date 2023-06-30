@@ -126,7 +126,7 @@ func (g *GameInterface) SendWSCommandWithResponse(command string) (packet.Comman
 // ... [Need to add its use]
 func (i *GameInterface) Output(content string) error {
 	fmt.Printf("%s\n", content)
-	if !args.InGameResponse() {
+	if !args.InGameResponse {
 		return nil
 	}
 	msg := strings.Replace(content, "schematic", "sc***atic", -1)
@@ -149,8 +149,10 @@ func (i *GameInterface) SendChat(content string) error {
 // 以 actionbar 的形式向所有在线玩家显示 message
 func (i *GameInterface) Title(message string) error {
 	title_struct := map[string]interface{}{
-		"rawtext": []string{
-			message,
+		"rawtext": []interface{}{
+			map[string]interface{}{
+				"text": message,
+			},
 		},
 	}
 	json_content, _ := json.Marshal(title_struct)
