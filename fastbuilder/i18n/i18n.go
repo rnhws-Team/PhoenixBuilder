@@ -168,6 +168,7 @@ const (
 	Task_Summary_3
 	UnsupportedACMEVersion
 	Warning_ACME_Deprecated
+	Warning_Schem_Deprecated
 	Warning_UserHomeDir
 )
 
