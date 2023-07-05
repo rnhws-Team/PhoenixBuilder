@@ -12,14 +12,8 @@ import (
 )
 
 const (
-	COMPONENT_INIT_FN   = "init"
-	COMPONENT_ACTIVE_FN = "active"
-	OMGPATH             = "omega_storage" + SEPA + "data"
-	OMGCONFIGPATH       = OMGROOTPATH + SEPA + "配置"
-	OMGROOTPATH         = "omega_storage"
-	OMGDATAPATH         = OMGROOTPATH + SEPA + "data"
-	SEPA                = string(filepath.Separator)
-	LUASOURCE           = "Lua-Component"
+	OMGSTIRAGEPATH = "omega_storage"
+	LUASOURCE      = "Lua-Component"
 )
 
 // 插件监测器
@@ -317,7 +311,7 @@ func (m *Monitor) luaCmdHandler(CmdMsg *CmdMsg) error {
 		if err := m.FileControl.CreateDirAndFiles(componentName); err != nil {
 			return err
 		}
-		PrintInfo(NewPrintMsg("提示", fmt.Sprintf("已经创建文件基本结构请到目录%v 修改", OMGCONFIGPATH+SEPA+componentName)))
+		PrintInfo(NewPrintMsg("提示", fmt.Sprintf("已经创建文件基本结构请到目录%v 修改", filepath.Join(GetOmgConfigPath(), componentName))))
 
 	case "delect":
 		if len(args) != 1 {

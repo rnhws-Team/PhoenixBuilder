@@ -45,7 +45,6 @@ func BuiltnWebSokcet(L *lua.LState) int {
 			http.HandleFunc("/ws", websocketHandler)
 			go http.ListenAndServe(addr, nil)
 			fmt.Println("开始监听")
-
 			L.Push(lua.LBool(true))
 		} else {
 			fmt.Println("错误 websocket连接应该有一个参数 描述你的端口")

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -40,37 +41,6 @@ type MappedBinding struct {
 	Map map[string]string `json:"绑定"`
 }
 
-// 获取插件路径绝对路径 文件名字/插件名字
-func GetComponentPath() []string {
-	nameList := []string{}
-	dirPath := OMGPATH + SEPA + "lua"
-	fileExt := ".lua"
-	// 读取目录下的所有文件
-	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
-		// 如果目录不存在，则创建它
-		err := os.MkdirAll(dirPath, os.ModePerm)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println("Directory created:", dirPath)
-
-	}
-	files, err := ioutil.ReadDir(dirPath)
-	if err != nil {
-		panic(err)
-	}
-
-	// 遍历目录下的所有文件名
-	for _, file := range files {
-		// 如果文件后缀名为 .lua，则打印文件名（去掉后缀名）
-		if strings.HasSuffix(file.Name(), fileExt) {
-			nameList = append(nameList, file.Name())
-		}
-
-	}
-	return nameList
-}
-
 // 打印指定消息
 func PrintInfo(str PrintMsg) {
 	pterm.Info.Printfln("[%v][%v]: %v ", time.Now().YearDay(), str.Type, str.Body)
@@ -84,30 +54,28 @@ func NewPrintMsg(typeName string, BodyString interface{}) PrintMsg {
 	}
 }
 
-// 获取data的相对位置omega_storage\\data
+// 获取omega_storage位置
 func GetRootPath() string {
-	return OMGDATAPATH
+	if runtime.GOOS == "android" {
+		return filepath.Join(GetAndroidDownPath(), OMGSTIRAGEPATH)
+	}
+	return OMGSTIRAGEPATH
+}
+
+// 获取安卓的下载目录
+func GetAndroidDownPath() string {
+	downloadDir := filepath.Join(os.Getenv("EXTERNAL_STORAGE"), "Download")
+	return downloadDir
 }
 
 // 获取"omega_storage\\data"
 func GetDataPath() string {
-	return OMGDATAPATH
+	return filepath.Join(GetRootPath(), "data")
 }
 
 // "omega_storage\\配置"
 func GetOmgConfigPath() string {
-	return OMGCONFIGPATH
-}
-
-// 针对binding.json文件进行的各种包装
-// 获取binding.json的路径
-func GetBindingPath() string {
-	return GetRootPath() + SEPA + "lua" + SEPA + BINDINGFILE
-}
-
-// 获取data/lua/config
-func GetConfigPath() string {
-	return GetRootPath() + SEPA + "lua" + SEPA + "config"
+	return filepath.Join(GetRootPath(), "配置")
 }
 
 // 安全地删除指定文件
@@ -262,9 +230,8 @@ func (f *FileControl) DelectCompoentFile(name string) error {
 // deleteSubDir 函数接受一个父目录路径和一个子目录名称作为参数，
 // 并安全地删除指定的子目录及其所有子文件。
 func (f *FileControl) DeleteSubDir(subDirName string) error {
-	parentDir := OMGCONFIGPATH
+	parentDir := GetOmgConfigPath()
 	subDir := filepath.Join(parentDir, subDirName)
-
 	// 检查子目录是否存在。
 	if !f.fileExists(subDir) {
 		return nil
@@ -288,7 +255,7 @@ type Result struct {
 
 // GetLuaComponentPath返回一个包含同名字 JSON 文件和 Lua 文件路径的字典。
 func (f *FileControl) GetLuaComponentData() (map[string]Result, error) {
-	dir := OMGCONFIGPATH
+	dir := GetOmgConfigPath()
 	results := make(map[string]Result)
 
 	// 使用 filepath.Walk 遍历指定目录及其子目录。
