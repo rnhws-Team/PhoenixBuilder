@@ -6,7 +6,6 @@ import (
 	"phoenixbuilder/lib/minecraft/neomega/decouple/core"
 	"phoenixbuilder/lib/minecraft/neomega/decouple/infosender"
 	"phoenixbuilder/lib/minecraft/neomega/omega"
-	"phoenixbuilder/minecraft"
 )
 
 func init() {
@@ -29,12 +28,20 @@ func (o *MicroOmega) GetMicroUQHolder() omega.MicroUQHolder {
 }
 
 type MicroOmegaOption struct {
-	CmdSenderOptions cmdsender.Options
+	CmdSenderOptions *cmdsender.Options
 }
 
-func NewMicroOmega(conn *minecraft.Conn, getMicroUQHolder func() omega.MicroUQHolder, options MicroOmegaOption) *MicroOmega {
+func MakeDefaultMicroOmegaOption() *MicroOmegaOption {
+	return &MicroOmegaOption{CmdSenderOptions: cmdsender.MakeDefaultCmdSenderOption()}
+}
+
+func NewMicroOmega(interactCore omega.InteractCore, getMicroUQHolder func() omega.MicroUQHolder, options *MicroOmegaOption) *MicroOmega {
+	if options == nil {
+		options = MakeDefaultMicroOmegaOption()
+	}
 	reactable := core.NewReactCore()
-	interactCore := core.NewInteractCore(conn)
+	//interactCore := core.NewInteractCore(conn)
+	//conn.ReadPacketAndBytes()
 	cmdSender := cmdsender.NewCmdSender(reactable, interactCore, options.CmdSenderOptions)
 	microUQHolder := getMicroUQHolder()
 	infoSender := infosender.NewInfoSender(interactCore, cmdSender, microUQHolder.GetBotBasicInfo())

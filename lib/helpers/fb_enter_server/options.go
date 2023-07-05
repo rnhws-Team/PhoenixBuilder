@@ -1,6 +1,27 @@
 package fb_enter_server
 
-import "time"
+import (
+	"fmt"
+	"phoenixbuilder/lib/minecraft/neomega/bundle"
+	"phoenixbuilder/lib/minecraft/neomega/omega"
+	"phoenixbuilder/minecraft"
+	"phoenixbuilder/minecraft/protocol/packet"
+	"time"
+)
+
+type ReadLoopFunction func(conn *minecraft.Conn, deadReason chan<- error, omega omega.ReactCore)
+
+var DefaultReadLoopFunction = func(conn *minecraft.Conn, deadReason chan<- error, omega omega.ReactCore) {
+	var pkt packet.Packet
+	var err error
+	for {
+		pkt, err = conn.ReadPacket()
+		if err != nil {
+			deadReason <- fmt.Errorf("%v: %v", ErrRentalServerDisconnected, err)
+		}
+		omega.HandlePacket(pkt)
+	}
+}
 
 type Options struct {
 	AuthServer                 string
@@ -14,7 +35,7 @@ type Options struct {
 	ServerCode                 string
 	ServerPassword             string
 	WriteBackToken             bool
-	ExpectedCmdFeedBack        bool
+	MicroOmegaOption           *bundle.MicroOmegaOption
 	PrintUQHolderDebugInfo     bool
 	TransferTimeOut            time.Duration
 	TransferCheckNumTimeOut    time.Duration
@@ -23,6 +44,7 @@ type Options struct {
 	MaximumWaitTime            time.Duration
 	DeadOnOpPrivilegeRemoved   bool
 	OpPrivilegeRemovedCallBack func()
+	ReadLoopFunction           ReadLoopFunction
 }
 
 func MakeDefaultOption() *Options {
@@ -38,7 +60,7 @@ func MakeDefaultOption() *Options {
 		ServerCode:                 "",
 		ServerPassword:             "",
 		WriteBackToken:             true,
-		ExpectedCmdFeedBack:        false,
+		MicroOmegaOption:           bundle.MakeDefaultMicroOmegaOption(),
 		PrintUQHolderDebugInfo:     false,
 		TransferTimeOut:            time.Minute,
 		TransferCheckNumTimeOut:    time.Minute,
@@ -47,5 +69,6 @@ func MakeDefaultOption() *Options {
 		MaximumWaitTime:            time.Minute * 3,
 		DeadOnOpPrivilegeRemoved:   true,
 		OpPrivilegeRemovedCallBack: nil,
+		ReadLoopFunction:           DefaultReadLoopFunction,
 	}
 }

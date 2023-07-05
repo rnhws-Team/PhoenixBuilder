@@ -8,14 +8,14 @@ import (
 	"phoenixbuilder/lib/helpers/bot_privilege"
 	"phoenixbuilder/lib/helpers/fbuser"
 	"phoenixbuilder/lib/minecraft/neomega/bundle"
-	"phoenixbuilder/lib/minecraft/neomega/decouple/cmdsender"
+	neomega_core "phoenixbuilder/lib/minecraft/neomega/decouple/core"
 	"phoenixbuilder/lib/minecraft/neomega/omega"
 	"phoenixbuilder/lib/minecraft/neomega/uqholder"
 	"phoenixbuilder/minecraft"
 	"phoenixbuilder/minecraft/protocol/packet"
 )
 
-func AccessServer(ctx context.Context, options *Options) (omegaCore *bundle.MicroOmega, deadReason chan error, err error) {
+func AccessServer(ctx context.Context, options *Options) (conn *minecraft.Conn, omegaCore *bundle.MicroOmega, deadReason chan error, err error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -33,9 +33,9 @@ func AccessServer(ctx context.Context, options *Options) (omegaCore *bundle.Micr
 		err = fbClient.EstablishConnectionToAuthServer(connectCtx, options.AuthServer)
 		if err != nil {
 			if connectCtx.Err() != nil {
-				return nil, nil, ErrFBServerConnectionTimeOut
+				return nil, nil, nil, ErrFBServerConnectionTimeOut
 			}
-			return nil, nil, fmt.Errorf("%v :%v", ErrFailToConnectFBServer, err)
+			return nil, nil, nil, fmt.Errorf("%v :%v", ErrFailToConnectFBServer, err)
 		}
 	}
 	if options.FBUserToken == "" {
@@ -47,9 +47,9 @@ func AccessServer(ctx context.Context, options *Options) (omegaCore *bundle.Micr
 		options.FBUserToken, err = fbauth.GetTokenByPassword(connectCtx, fbClient, options.FBUserName, options.FBUserPassword)
 		if err != nil {
 			if connectCtx.Err() != nil {
-				return nil, nil, ErrGetTokenTimeOut
+				return nil, nil, nil, ErrGetTokenTimeOut
 			}
-			return nil, nil, fmt.Errorf("%v: %v", ErrFBUserCenterLoginFail, err)
+			return nil, nil, nil, fmt.Errorf("%v: %v", ErrFBUserCenterLoginFail, err)
 		}
 		if options.WriteBackToken {
 			fbuser.WriteToken(options.FBUserToken, fbuser.LoadTokenPath())
@@ -58,7 +58,6 @@ func AccessServer(ctx context.Context, options *Options) (omegaCore *bundle.Micr
 	authenticator := fbauth.NewAccessWrapper(fbClient, options.FBUserToken)
 	authenticator.SetServerInfo(options.ServerCode, options.ServerPassword)
 	fmt.Printf("正在登陆网易租赁服(服号:%v)...\n", authenticator.ServerCode)
-	var conn *minecraft.Conn
 	{
 		connectMCServer := func() (conn *minecraft.Conn, err error) {
 			connectCtx := ctx
@@ -89,18 +88,13 @@ func AccessServer(ctx context.Context, options *Options) (omegaCore *bundle.Micr
 			fmt.Println("连接失败，重试中...")
 		}
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 	}
 	fmt.Println("检查和配置租赁服状态中...")
-	var pkt packet.Packet
-	omegaCore = bundle.NewMicroOmega(conn, func() omega.MicroUQHolder {
+	omegaCore = bundle.NewMicroOmega(neomega_core.NewInteractCore(conn), func() omega.MicroUQHolder {
 		return uqholder.NewMicroUQHolder(conn)
-	}, bundle.MicroOmegaOption{
-		CmdSenderOptions: cmdsender.Options{
-			ExpectedCmdFeedBack: options.ExpectedCmdFeedBack,
-		},
-	})
+	}, options.MicroOmegaOption)
 	deadReason = make(chan error, 0)
 	challengeSolver := bot_privilege.NewPyRPCResponser(omegaCore, authenticator.GetFBUid(), fbClient.Closed(),
 		func(content, uid string) string {
@@ -118,12 +112,12 @@ func AccessServer(ctx context.Context, options *Options) (omegaCore *bundle.Micr
 			}
 			return data
 		},
-		func(firstArg, secondArg string, botEntityUniqueID int64) (valM, valS, valT string) {
+		func(args string) (ret string) {
 			connectCtx := ctx
 			if options.TransferTimeOut != 0 {
 				connectCtx, _ = context.WithTimeout(ctx, options.TransferCheckNumTimeOut)
 			}
-			valM, valS, valT, err = authenticator.TransferCheckNum(connectCtx, firstArg, secondArg, botEntityUniqueID)
+			ret, err = authenticator.TransferCheckNum(connectCtx, args)
 			if err != nil {
 				if connectCtx.Err() != nil {
 					deadReason <- ErrFBTransferCheckNumTimeOut
@@ -143,17 +137,18 @@ func AccessServer(ctx context.Context, options *Options) (omegaCore *bundle.Micr
 		}
 	})
 	go func() {
-		for {
-			pkt, err = conn.ReadPacket()
-			if err != nil {
-				deadReason <- fmt.Errorf("%v: %v", ErrRentalServerDisconnected, err)
-			}
-			omegaCore.HandlePacket(pkt)
-		}
+		options.ReadLoopFunction(conn, deadReason, omegaCore)
 	}()
-	err = helper.WaitOK(ctx, challengeSolver.ChallengeCompete)
+	waitErr := make(chan error)
+	go func() {
+		waitErr <- helper.WaitOK(ctx, challengeSolver.ChallengeCompete)
+	}()
+	select {
+	case err = <-waitErr:
+	case err = <-deadReason:
+	}
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	if options.MakeBotCreative {
 		omegaCore.GetGameControl().SendPlayerCmdAndInvokeOnResponseWithFeedback("gamemode c @s", func(output *packet.CommandOutput) {
@@ -169,5 +164,5 @@ func AccessServer(ctx context.Context, options *Options) (omegaCore *bundle.Micr
 			}
 		})
 	}
-	return omegaCore, deadReason, nil
+	return conn, omegaCore, deadReason, nil
 }
