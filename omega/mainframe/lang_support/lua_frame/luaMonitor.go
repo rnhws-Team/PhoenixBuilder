@@ -3,13 +3,14 @@ package luaFrame
 import (
 	"errors"
 	"fmt"
-	"github.com/pterm/pterm"
-	lua "github.com/yuin/gopher-lua"
 	"path/filepath"
 	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/BuiltlnFn"
 	omgApi "phoenixbuilder/omega/mainframe/lang_support/lua_frame/omgcomponentapi"
 	"reflect"
 	"sync"
+
+	"github.com/pterm/pterm"
+	lua "github.com/yuin/gopher-lua"
 )
 
 const (
@@ -69,12 +70,12 @@ func (m *Monitor) CmdCenter(msg string) error {
 		if err := m.luaCmdHandler(&CmdMsg); err != nil {
 			PrintInfo(NewPrintMsg("警告", err))
 		}
-	case HEADRELOAD:
+		/*case HEADRELOAD:
 		go func() {
 			if err := m.Reload(&CmdMsg); err != nil {
 				PrintInfo(NewPrintMsg("警告", err))
 			}
-		}()
+		}()*/
 		/*
 			case HEADSTART:
 				go func() {
@@ -163,6 +164,7 @@ func (m *Monitor) CloseLua(name string) error {
 			return nil
 		}
 		v.L.Close()
+		v.L = nil
 		v.Running = false
 		delete(m.ComponentPoll, name)
 		return nil
@@ -178,11 +180,11 @@ func (m *Monitor) luaCmdHandler(CmdMsg *CmdMsg) error {
 	case "help":
 		warning := []string{
 			"lua luas help 寻求指令帮助\n",
-			"lua reload component [重加载的插件名字] 加载/重加载指定插件 如果参数是all就是全部插件重载\n",
+			//"lua reload component [重加载的插件名字] 加载/重加载指定插件 如果参数是all就是全部插件重载\n",
 			"lua luas new [新插件名字] [描述]创建一个自定义空白插件[描述为选填]\n",
 			"lua luas delect [插件名字]\n",
 			"lua luas list 列出当前正在运行的插件\n",
-			"lua luas stop [插件名字] 暂停插件运行 参数为all则暂停所有插件运行",
+			//"lua luas stop [插件名字] 暂停插件运行 参数为all则暂停所有插件运行",
 		}
 		msg := ""
 		for _, v := range warning {
@@ -226,25 +228,25 @@ func (m *Monitor) luaCmdHandler(CmdMsg *CmdMsg) error {
 			}
 		}
 		PrintInfo(NewPrintMsg("信息", msg+"处于开启状态"))
-	case "stop":
-		if len(args) != 1 {
-			return errors.New("lua luas stop指令后面应该加上需要删除的插件名字")
+	/*case "stop":
+	if len(args) != 1 {
+		return errors.New("lua luas stop指令后面应该加上需要删除的插件名字")
+	}
+	name := args[0]
+	if name == "all" {
+		for k, _ := range m.ComponentPoll {
+			m.CloseLua(k)
+			PrintInfo(NewPrintMsg("提示", fmt.Sprintf("%v插件关闭成功", k)))
 		}
-		name := args[0]
-		if name == "all" {
-			for k, _ := range m.ComponentPoll {
-				m.CloseLua(k)
-				PrintInfo(NewPrintMsg("提示", fmt.Sprintf("%v插件关闭成功", k)))
-			}
-			PrintInfo(NewPrintMsg("提示", "全部组件已经关闭"))
-			return nil
-		}
-		if _, ok := m.ComponentPoll[name]; !ok {
-			return errors.New(fmt.Sprintf("我们并没有在加载的插件池子中找到%v", name))
-		}
-		m.CloseLua(name)
-		PrintInfo(NewPrintMsg("提示", fmt.Sprintf("%v插件关闭成功", name)))
-
+		PrintInfo(NewPrintMsg("提示", "全部组件已经关闭"))
+		return nil
+	}
+	if _, ok := m.ComponentPoll[name]; !ok {
+		return errors.New(fmt.Sprintf("我们并没有在加载的插件池子中找到%v", name))
+	}
+	m.CloseLua(name)
+	PrintInfo(NewPrintMsg("提示", fmt.Sprintf("%v插件关闭成功", name)))
+	*/
 	default:
 		return errors.New("未知指令 请输入lua luas help寻求帮助")
 	}
@@ -282,20 +284,23 @@ func (m *Monitor) RunComponent(name string) error {
 		return nil
 	}
 	m.OmgFrame.Omega.GetBackendDisplay().Write(pterm.Success.Sprintf("\t正在加载组件 [%v] %v@%v", data.Config.Source, name, data.Config.Version))
-	L := lua.NewState()
-	// 为 Lua 虚拟机提供一个安全的环境 提供基础的方法
-	if err := m.BuiltlnFner.LoadFn(L); err != nil {
-		return err
-	}
-	m.ComponentPoll[name] = &LuaComponent{
-		L:       L,
-		Msg:     make(map[string]string),
-		Running: false, //初始化完成但是未运行
-		Config:  data.Config,
-	}
+
 	//另外开线程
 	go func(newName string) {
 		//如果没有
+		L := lua.NewState()
+		// 为 Lua 虚拟机提供一个安全的环境 提供基础的方法
+
+		if err := m.BuiltlnFner.LoadFn(L); err != nil {
+			fmt.Println(err)
+			return
+		}
+		m.ComponentPoll[name] = &LuaComponent{
+			L:       L,
+			Msg:     make(map[string]string),
+			Running: false, //初始化完成但是未运行
+			Config:  data.Config,
+		}
 		defer m.CloseLua(newName)
 
 		if _, ok := m.ComponentPoll[name]; !ok {
@@ -306,6 +311,5 @@ func (m *Monitor) RunComponent(name string) error {
 			PrintInfo(NewPrintMsg("lua代码报错", err))
 		}
 	}(name)
-	PrintInfo(NewPrintMsg("提示", fmt.Sprintf("%v初始化", m.ComponentPoll[name].L)))
 	return nil
 }
