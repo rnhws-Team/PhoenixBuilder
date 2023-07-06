@@ -295,6 +295,40 @@ func (f *FileControl) GetLuaComponentData() (map[string]Result, error) {
 	return results, nil
 }
 
+type LuaResult struct {
+	Config LuaCommpoentConfig
+	Code   []byte
+}
+
+// 获取指定配置和code
+func (f *FileControl) GetConfigAndCode(name string) (LuaResult, error) {
+	Path := filepath.Join(GetOmgConfigPath(), name)
+	//检查是否存在
+	info, err := os.Stat(Path)
+	if err != nil {
+		return LuaResult{}, errors.New("不存在该目录")
+	}
+	//检查是否为目录
+	if !info.IsDir() {
+		return LuaResult{}, errors.New("不应该在配置文件里面存在一个lua插件名字的文件")
+	}
+	//获取路径
+	jsonPath := filepath.Join(Path, name+".json")
+	LuaPath := filepath.Join(Path, name+".lua")
+	jsonConfig, err := f.ReadConfig(jsonPath)
+	if err != nil {
+		return LuaResult{}, err
+	}
+	luaCode, err := f.Read(LuaPath)
+	if err != nil {
+		return LuaResult{}, err
+	}
+	return LuaResult{
+		jsonConfig,
+		luaCode,
+	}, nil
+}
+
 // fileExists 函数接受一个文件路径作为参数，如果文件存在则返回 true，否则返回 false。
 func (f *FileControl) fileExists(path string) bool {
 	_, err := os.Stat(path)

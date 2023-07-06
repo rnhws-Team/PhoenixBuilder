@@ -592,38 +592,24 @@ func (b *LuaComponenter) Init(cfg *defines.ComponentConfig, storage defines.Stor
 	}
 	//读取lua框架
 	b.Monitor = lf.NewMonitor(omgApi.NewOmgCoreComponent(b.omega, b.mainFrame))
-	//读取一次已经产生的文件
-	b.Monitor.InintComponents()
-	i := 0
-	for k, v := range b.Monitor.LuaComponentData {
-		i++
-		if v.JsonConfig.Disabled {
-
-			b.Monitor.OmgFrame.Omega.GetBackendDisplay().Write(pterm.Warning.Sprintf("\t跳过加载组件 %3d/%3d [%v] %v@%v", i, len(b.Monitor.LuaComponentData), v.JsonConfig.Source, k, v.JsonConfig.Version))
-			//b.omega.backendLogger.Write()
-		} else {
-			b.Monitor.OmgFrame.Omega.GetBackendDisplay().Write(pterm.Success.Sprintf("\t正在加载组件 %3d/%3d [%v] %v@%v", i, len(b.Monitor.LuaComponentData), v.JsonConfig.Source, k, v.JsonConfig.Version))
-			//b.omega.backendLogger.Write()
-		}
-
-	}
 }
 func (b *LuaComponenter) Inject(frame defines.MainFrame) {
 	b.mainFrame = frame
 	//注入函数 并且开启插件
-
-	b.Monitor.InjectComponents()
-
 }
 
 func (o *LuaComponenter) Activate() {
 	time.Sleep(time.Second * 3)
 	//开启组件
 	o.Monitor.OmgFrame.MainFrame = o.mainFrame
-	for k, _ := range o.Monitor.ComponentPoll {
-		err := o.Monitor.StartComponent(k, o.Monitor.LuaComponentData[k].LuaFile)
-		if err != nil {
-			lf.PrintInfo(lf.NewPrintMsg("警告", err))
+	NameDic, err := o.Monitor.FileControl.GetLuaComponentData()
+	if err != nil {
+		fmt.Println(err)
+	}
+	//启动插件你
+	for name, _ := range NameDic {
+		if err := o.Monitor.RunComponent(name); err != nil {
+			fmt.Println(err)
 		}
 	}
 	//现在开始监听后台
