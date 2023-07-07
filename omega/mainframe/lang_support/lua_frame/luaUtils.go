@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/luaConfig"
 	"runtime"
 	"strings"
 	"sync"
@@ -201,8 +202,8 @@ func (f *FileControl) Read(filename string) ([]byte, error) {
 }
 
 // 读取并返回结构体
-func (f *FileControl) ReadConfig(path string) (LuaCommpoentConfig, error) {
-	newConfig := LuaCommpoentConfig{
+func (f *FileControl) ReadConfig(path string) (luaConfig.LuaCommpoentConfig, error) {
+	newConfig := luaConfig.LuaCommpoentConfig{
 		Disabled: true, //默认关闭
 	}
 	data, err := f.Read(path)
@@ -250,7 +251,7 @@ func (f *FileControl) DeleteSubDir(subDirName string) error {
 type Result struct {
 	JsonFile   string
 	LuaFile    string
-	JsonConfig LuaCommpoentConfig
+	JsonConfig luaConfig.LuaCommpoentConfig
 }
 
 // GetLuaComponentPath返回一个包含同名字 JSON 文件和 Lua 文件路径的字典。
@@ -296,7 +297,7 @@ func (f *FileControl) GetLuaComponentData() (map[string]Result, error) {
 }
 
 type LuaResult struct {
-	Config LuaCommpoentConfig
+	Config luaConfig.LuaCommpoentConfig
 	Code   []byte
 }
 
@@ -339,7 +340,7 @@ func (f *FileControl) fileExists(path string) bool {
 func (f *FileControl) CreateDirAndFiles(name string) error {
 	// 创建子目录。
 	dir := GetOmgConfigPath()
-	data := LuaCommpoentConfig{
+	data := luaConfig.LuaCommpoentConfig{
 		Name:     name,
 		Usage:    "",
 		Version:  "0.0.1",
@@ -392,4 +393,13 @@ func (f *FileControl) CreateDirAndFiles(name string) error {
 	}
 
 	return nil
+}
+
+// RemoveAt 从列表中删除指定下标的元素，返回删除后的列表和删除的元素
+func RemoveSlice(list []interface{}, index int) ([]interface{}, interface{}) {
+	if index < 0 || index >= len(list) {
+		return list, nil
+	}
+	value := list[index]
+	return append(list[:index], list[index+1:]...), value
 }

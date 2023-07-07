@@ -582,6 +582,8 @@ type LuaComponenter struct {
 	Monitor   *lf.Monitor
 	LuaFrame  *BuiltlnFn.BuiltlnFn
 	mainFrame defines.MainFrame
+	//用于分发各种包
+	//PackageChanSlice []*Package.PackageChan
 }
 
 func (b *LuaComponenter) Init(cfg *defines.ComponentConfig, storage defines.StorageAndLogProvider) {
@@ -590,30 +592,33 @@ func (b *LuaComponenter) Init(cfg *defines.ComponentConfig, storage defines.Stor
 	if err != nil {
 		panic(err)
 	}
-	//读取lua框架
-	b.Monitor = lf.NewMonitor(omgApi.NewOmgCoreComponent(b.omega, b.mainFrame))
+
 }
 func (b *LuaComponenter) Inject(frame defines.MainFrame) {
 	b.mainFrame = frame
-	//注入函数 并且开启插件
 }
 
 func (o *LuaComponenter) Activate() {
-	time.Sleep(time.Second * 3)
 	//开启组件
+	o.Monitor = lf.NewMonitor(omgApi.NewOmgCoreComponent(o.omega, o.mainFrame))
 	o.Monitor.OmgFrame.MainFrame = o.mainFrame
+	time.Sleep(time.Second * 3)
+	//读取lua框架
 	NameDic, err := o.Monitor.FileControl.GetLuaComponentData()
 	if err != nil {
 		fmt.Println(err)
 	}
-	//启动插件你
+	//启动插件
 	for name, _ := range NameDic {
 		if err := o.Monitor.RunComponent(name); err != nil {
 			fmt.Println(err)
 		}
 	}
-	//现在开始监听后台
+	//启动游戏包包的监听 插件提交请求 然后插件根据请求进行分配
+	//现在开始监听后台 并且分散给所有插件
 	func() {
+		//支持运行各种监听包
+		o.Monitor.BuiltlnFner.PackageHandler()
 		o.Monitor.OmgFrame.Omega.SetBackendCmdInterceptor(func(cmds []string) (stop bool) {
 			is := false
 			if cmds[0] == "lua" {

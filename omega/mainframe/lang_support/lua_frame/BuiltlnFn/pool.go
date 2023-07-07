@@ -14,5 +14,6 @@ func (b *BuiltlnFn) GetSkynetBuiltlnFunction() BuiltlnFunctionDic {
 		"GetControl":    &BuiltGameControler{b},
 		"loadComponent": &LoadSide{b},
 		"DataControler": &BuiltDataControler{b},
+		"GetBackEnder":  &BuiltBackEnder{BuiltlnFn: b},
 	}
 }

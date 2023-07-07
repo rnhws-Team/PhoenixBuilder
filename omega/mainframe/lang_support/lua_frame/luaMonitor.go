@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/BuiltlnFn"
+	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/Package"
+	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/luaConfig"
 	omgApi "phoenixbuilder/omega/mainframe/lang_support/lua_frame/omgcomponentapi"
 	"reflect"
 	"sync"
@@ -39,7 +41,7 @@ type LuaComponent struct {
 	//是否运行
 	Running bool
 	//插件的配置
-	Config LuaCommpoentConfig
+	Config luaConfig.LuaCommpoentConfig
 }
 
 func NewMonitor(lc *omgApi.OmgApi) *Monitor {
@@ -48,8 +50,9 @@ func NewMonitor(lc *omgApi.OmgApi) *Monitor {
 		//获取omg框架
 		OmgFrame: lc,
 		BuiltlnFner: &BuiltlnFn.BuiltlnFn{
-			OmegaFrame: lc,
-			Listener:   sync.Map{},
+			OmegaFrame:       lc,
+			Listener:         sync.Map{},
+			PackageChanSlice: []*Package.PackageChan{},
 		},
 		FileControl: &FileControl{},
 	}
