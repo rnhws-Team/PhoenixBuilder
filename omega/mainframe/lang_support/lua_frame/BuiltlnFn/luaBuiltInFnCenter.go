@@ -55,7 +55,10 @@ func (m *BuiltlnFn) PackageHandler() {
 		m.PackageInjectIntoChan(cmds, Package.BACK_END_TYPE)
 		return false
 	})
-
+	m.OmegaFrame.MainFrame.GetGameListener().SetGameChatInterceptor(func(chat *defines.GameChat) (stop bool) {
+		m.PackageInjectIntoChan(chat, Package.MSG_TYPE)
+		return false
+	})
 }
 
 // 载入

@@ -633,33 +633,9 @@ func (o *LuaComponenter) Activate() {
 			}
 			return is
 		})
-		//o.omega.SetBackendCmdInterceptor()
-		o.mainFrame.GetGameListener().SetGameChatInterceptor(o.MsgDistributionCenter)
+
 	}()
 
-}
-
-// 每次消息传输过来则分发处理
-func (b *LuaComponenter) MsgDistributionCenter(chat *defines.GameChat) bool {
-	b.Monitor.BuiltlnFner.Listener.Range(func(key, value interface{}) bool { // 遍历所有监听器
-		msg := ""
-		for _, v := range chat.Msg {
-			msg += v + " "
-		}
-		message := BuiltlnFn.Message{
-			Type:    chat.Name,
-			Content: msg,
-		}
-		listener := key.(*BuiltlnFn.Listener) // 获取监听器实例
-		select {
-		case listener.MsgChannel <- message: // 尝试将消息发送到监听器的消息通道
-		default: // 如果监听器的消息通道已满
-			<-listener.MsgChannel          // 从通道中读取并丢弃一条最旧的消息
-			listener.MsgChannel <- message // 将新消息发送到监听器的消息通道
-		}
-		return true
-	})
-	return false
 }
 
 func getCoreComponentsPool() map[string]func() defines.CoreComponent {
