@@ -5,7 +5,7 @@ import (
 	lua "github.com/yuin/gopher-lua"
 	"phoenixbuilder/minecraft/protocol"
 	"phoenixbuilder/omega/defines"
-	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/Package"
+	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/definition"
 )
 
 // 模拟消息
@@ -68,8 +68,8 @@ func (b *BuiltListener) GetLoger(l *lua.LState) int {
 // 登出
 func (b *BuiltListener) GetLogoutInfo(l *lua.LState) int {
 	msgChan := make(chan interface{}, 1)
-	b.RegisterPackage(&Package.PackageChan{
-		PackageType:    Package.LOGOUT_TYPE,
+	b.RegisterPackage(&definition.PackageChan{
+		PackageType:    definition.LOGOUT_TYPE,
 		PackageMsgChan: msgChan,
 	})
 	logoutMsg := <-msgChan
@@ -87,8 +87,8 @@ func (b *BuiltListener) GetLogoutInfo(l *lua.LState) int {
 // 登进
 func (b *BuiltListener) GetLoginInfo(l *lua.LState) int {
 	msgChan := make(chan interface{}, 1)
-	b.RegisterPackage(&Package.PackageChan{
-		PackageType:    Package.LOGIN_TYPE,
+	b.RegisterPackage(&definition.PackageChan{
+		PackageType:    definition.LOGIN_TYPE,
 		PackageMsgChan: msgChan,
 	})
 	logoutMsg := <-msgChan
@@ -106,8 +106,8 @@ func (b *BuiltListener) GetLoginInfo(l *lua.LState) int {
 // NextMsg 用于从监听器的消息通道中获取下一个消息
 func (f *BuiltListener) NextMsg(L *lua.LState) int {
 	msgChan := make(chan interface{}, 1)
-	msgType := Package.MSG_TYPE
-	f.RegisterPackage(&Package.PackageChan{
+	msgType := definition.MSG_TYPE
+	f.RegisterPackage(&definition.PackageChan{
 		PackageType:    msgType,
 		PackageMsgChan: msgChan,
 	})

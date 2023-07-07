@@ -1,4 +1,4 @@
-package Package
+package definition
 
 // 消息包
 type PackageChan struct {

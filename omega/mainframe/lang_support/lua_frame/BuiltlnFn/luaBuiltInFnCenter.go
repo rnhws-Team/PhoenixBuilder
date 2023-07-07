@@ -3,7 +3,7 @@ package BuiltlnFn
 import (
 	"phoenixbuilder/minecraft/protocol"
 	"phoenixbuilder/omega/defines"
-	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/Package"
+	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/definition"
 	omgApi "phoenixbuilder/omega/mainframe/lang_support/lua_frame/omgcomponentapi"
 	"sync"
 
@@ -16,11 +16,11 @@ type BuiltlnFn struct {
 	OmegaFrame       *omgApi.OmgApi
 	Listener         sync.Map
 	mainframe        defines.MainFrame
-	PackageChanSlice []*Package.PackageChan
+	PackageChanSlice []*definition.PackageChan
 }
 
 // 将结构体塞入通道内
-func (m *BuiltlnFn) RegisterPackage(packageChan *Package.PackageChan) {
+func (m *BuiltlnFn) RegisterPackage(packageChan *definition.PackageChan) {
 	m.PackageChanSlice = append(m.PackageChanSlice, packageChan)
 }
 
@@ -53,20 +53,20 @@ func (m *BuiltlnFn) PackageHandler() {
 	//注册然后分发
 	//获取终端消息
 	m.OmegaFrame.MainFrame.SetBackendCmdInterceptor(func(cmds []string) (stop bool) {
-		m.PackageInjectIntoChan(cmds, Package.BACK_END_TYPE)
+		m.PackageInjectIntoChan(cmds, definition.BACK_END_TYPE)
 		return false
 	})
 	m.OmegaFrame.MainFrame.GetGameListener().SetGameChatInterceptor(func(chat *defines.GameChat) (stop bool) {
-		m.PackageInjectIntoChan(chat, Package.MSG_TYPE)
+		m.PackageInjectIntoChan(chat, definition.MSG_TYPE)
 		return false
 	})
 	//登进
 	m.OmegaFrame.MainFrame.GetGameListener().AppendLoginInfoCallback(func(entry protocol.PlayerListEntry) {
-		m.PackageInjectIntoChan(entry, Package.LOGIN_TYPE)
+		m.PackageInjectIntoChan(entry, definition.LOGIN_TYPE)
 	})
 	//登出
 	m.OmegaFrame.MainFrame.GetGameListener().AppendLogoutInfoCallback(func(entry protocol.PlayerListEntry) {
-		m.PackageInjectIntoChan(entry, Package.LOGOUT_TYPE)
+		m.PackageInjectIntoChan(entry, definition.LOGOUT_TYPE)
 	})
 }
 

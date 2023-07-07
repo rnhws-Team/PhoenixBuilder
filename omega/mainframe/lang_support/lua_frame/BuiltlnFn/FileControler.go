@@ -3,6 +3,7 @@ package BuiltlnFn
 import (
 	"fmt"
 	lua "github.com/yuin/gopher-lua"
+	"path/filepath"
 	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/utils"
 )
 
@@ -17,9 +18,17 @@ func (b *BuiltFileControler) BuiltFunc(L *lua.LState) int {
 		l.Push(lua.LString(utils.GetOmgConfigPath()))
 		return 1
 	}))
+	//获取配置文件的坐标位置
+	L.SetField(fileControler, "GetDataPath", L.NewFunction(func(l *lua.LState) int {
+		l.Push(lua.LString(filepath.Join(utils.GetRootPath(), "data")))
+		return 1
+	}))
+
 	L.Push(fileControler)
 	return 1
 }
+
+// 获取配置文件 返回string
 func (b *BuiltFileControler) GetData(l *lua.LState) int {
 	if l.GetTop() != 1 {
 		l.ArgError(1, "请传入文件名字来获取指定信息")

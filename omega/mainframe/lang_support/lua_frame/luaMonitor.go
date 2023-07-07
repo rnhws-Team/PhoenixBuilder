@@ -1,11 +1,12 @@
 package luaFrame
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"path/filepath"
 	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/BuiltlnFn"
-	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/Package"
+	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/definition"
 	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/luaConfig"
 	omgApi "phoenixbuilder/omega/mainframe/lang_support/lua_frame/omgcomponentapi"
 	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/utils"
@@ -14,11 +15,6 @@ import (
 
 	"github.com/pterm/pterm"
 	lua "github.com/yuin/gopher-lua"
-)
-
-const (
-	OMGSTIRAGEPATH = "omega_storage"
-	LUASOURCE      = "Lua-Component"
 )
 
 // 插件监测器
@@ -53,7 +49,7 @@ func NewMonitor(lc *omgApi.OmgApi) *Monitor {
 		BuiltlnFner: &BuiltlnFn.BuiltlnFn{
 			OmegaFrame:       lc,
 			Listener:         sync.Map{},
-			PackageChanSlice: []*Package.PackageChan{},
+			PackageChanSlice: []*definition.PackageChan{},
 		},
 		FileControl: &utils.FileControl{},
 	}
@@ -294,7 +290,11 @@ func (m *Monitor) RunComponent(name string) error {
 		//如果没有
 		L := lua.NewState()
 		// 为 Lua 虚拟机提供一个安全的环境 提供基础的方法
-
+		configString, ConfigErr := json.Marshal(data.Config)
+		if ConfigErr != nil {
+			utils.PrintInfo(utils.NewPrintMsg("警告", ConfigErr))
+		}
+		L.SetGlobal("ComponentConfig", lua.LString(configString))
 		if err := m.BuiltlnFner.LoadFn(L); err != nil {
 			fmt.Println(err)
 			return

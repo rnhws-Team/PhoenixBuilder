@@ -1,4 +1,4 @@
-package Package
+package definition
 
 // mc游戏内的包
 const (

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/definition"
 	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/luaConfig"
 	"runtime"
 	"strings"
@@ -58,9 +59,9 @@ func NewPrintMsg(typeName string, BodyString interface{}) PrintMsg {
 // 获取omega_storage位置
 func GetRootPath() string {
 	if runtime.GOOS == "android" {
-		return filepath.Join(GetAndroidDownPath(), "omega_storage")
+		return filepath.Join(GetAndroidDownPath(), definition.OMGSTIRAGEPATH)
 	}
-	return "omega_storage"
+	return definition.OMGSTIRAGEPATH
 }
 
 // 获取安卓的下载目录
