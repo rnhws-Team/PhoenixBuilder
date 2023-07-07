@@ -3,6 +3,7 @@ package BuiltlnFn
 import (
 	"fmt"
 	lua "github.com/yuin/gopher-lua"
+	"phoenixbuilder/minecraft/protocol"
 	"phoenixbuilder/omega/defines"
 	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/Package"
 )
@@ -49,15 +50,57 @@ func (b *BuiltListener) BuiltFunc(L *lua.LState) int {
 
 		return 1
 	}))
+	L.SetField(listener, "GetLogInfoer", L.NewFunction(b.GetLoger))
 	//返回listener对象
 	L.Push(listener)
 	return 1
 }
 
-// 监听器
-// Listener 结构体
-type Listener struct {
-	MsgChannel chan Message // 每个监听器都有一个独立的消息通道
+// 获取玩家登录登出
+func (b *BuiltListener) GetLoger(l *lua.LState) int {
+	LogInfoer := l.NewTable()
+	l.SetField(LogInfoer, "GetLoginInfo", l.NewFunction(b.GetLoginInfo))
+	l.SetField(LogInfoer, "GetLogoutInfo", l.NewFunction(b.GetLogoutInfo))
+	l.Push(LogInfoer)
+	return 1
+}
+
+// 登出
+func (b *BuiltListener) GetLogoutInfo(l *lua.LState) int {
+	msgChan := make(chan interface{}, 1)
+	b.RegisterPackage(&Package.PackageChan{
+		PackageType:    Package.LOGOUT_TYPE,
+		PackageMsgChan: msgChan,
+	})
+	logoutMsg := <-msgChan
+	logoutTable := l.NewTable()
+	switch v := logoutMsg.(type) {
+	case protocol.PlayerListEntry:
+		l.SetField(logoutTable, "Name", lua.LString(v.Username))
+	default:
+		fmt.Println("登陆包解析失败")
+	}
+	l.Push(logoutTable)
+	return 1
+}
+
+// 登进
+func (b *BuiltListener) GetLoginInfo(l *lua.LState) int {
+	msgChan := make(chan interface{}, 1)
+	b.RegisterPackage(&Package.PackageChan{
+		PackageType:    Package.LOGIN_TYPE,
+		PackageMsgChan: msgChan,
+	})
+	logoutMsg := <-msgChan
+	logoutTable := l.NewTable()
+	switch v := logoutMsg.(type) {
+	case protocol.PlayerListEntry:
+		l.SetField(logoutTable, "Name", lua.LString(v.Username))
+	default:
+		fmt.Println("登出包解析失败")
+	}
+	l.Push(logoutTable)
+	return 1
 }
 
 // NextMsg 用于从监听器的消息通道中获取下一个消息

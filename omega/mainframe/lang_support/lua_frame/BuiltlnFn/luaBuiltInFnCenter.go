@@ -1,6 +1,7 @@
 package BuiltlnFn
 
 import (
+	"phoenixbuilder/minecraft/protocol"
 	"phoenixbuilder/omega/defines"
 	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/Package"
 	omgApi "phoenixbuilder/omega/mainframe/lang_support/lua_frame/omgcomponentapi"
@@ -58,6 +59,14 @@ func (m *BuiltlnFn) PackageHandler() {
 	m.OmegaFrame.MainFrame.GetGameListener().SetGameChatInterceptor(func(chat *defines.GameChat) (stop bool) {
 		m.PackageInjectIntoChan(chat, Package.MSG_TYPE)
 		return false
+	})
+	//登进
+	m.OmegaFrame.MainFrame.GetGameListener().AppendLoginInfoCallback(func(entry protocol.PlayerListEntry) {
+		m.PackageInjectIntoChan(entry, Package.LOGIN_TYPE)
+	})
+	//登出
+	m.OmegaFrame.MainFrame.GetGameListener().AppendLogoutInfoCallback(func(entry protocol.PlayerListEntry) {
+		m.PackageInjectIntoChan(entry, Package.LOGOUT_TYPE)
 	})
 }
 
