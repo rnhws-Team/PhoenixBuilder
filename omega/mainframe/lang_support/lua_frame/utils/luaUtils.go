@@ -1,4 +1,4 @@
-package luaFrame
+package utils
 
 import (
 	"encoding/json"
@@ -27,10 +27,10 @@ const (
 
 // 指令信息 必须遵循 HEAD BEHAVIOR
 type CmdMsg struct {
-	isCmd    bool
+	IsCmd    bool
 	Head     string
 	Behavior string
-	args     []string
+	Args     []string
 }
 type PrintMsg struct {
 	Type string
@@ -58,9 +58,9 @@ func NewPrintMsg(typeName string, BodyString interface{}) PrintMsg {
 // 获取omega_storage位置
 func GetRootPath() string {
 	if runtime.GOOS == "android" {
-		return filepath.Join(GetAndroidDownPath(), OMGSTIRAGEPATH)
+		return filepath.Join(GetAndroidDownPath(), "omega_storage")
 	}
-	return OMGSTIRAGEPATH
+	return "omega_storage"
 }
 
 // 获取安卓的下载目录
@@ -99,15 +99,15 @@ func FormateCmd(str string) CmdMsg {
 
 	words := strings.Fields(str)
 	if len(words) < 3 {
-		return CmdMsg{isCmd: false}
+		return CmdMsg{IsCmd: false}
 	}
 	if words[0] != "lua" {
-		return CmdMsg{isCmd: false}
+		return CmdMsg{IsCmd: false}
 	}
 	head := words[1]
 	//如果不属于任何指令则返回空cmdmsg
 	if head != HEADLUA && head != HEADRELOAD && head != HEADSTART {
-		return CmdMsg{isCmd: false}
+		return CmdMsg{IsCmd: false}
 	}
 	behavior := words[2]
 	args := []string{}
@@ -117,8 +117,8 @@ func FormateCmd(str string) CmdMsg {
 	return CmdMsg{
 		Head:     head,
 		Behavior: behavior,
-		args:     args,
-		isCmd:    true,
+		Args:     args,
+		IsCmd:    true,
 	}
 }
 

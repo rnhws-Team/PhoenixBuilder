@@ -12,6 +12,7 @@ import (
 	lf "phoenixbuilder/omega/mainframe/lang_support/lua_frame"
 	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/BuiltlnFn"
 	omgApi "phoenixbuilder/omega/mainframe/lang_support/lua_frame/omgcomponentapi"
+	utils2 "phoenixbuilder/omega/mainframe/lang_support/lua_frame/utils"
 	"phoenixbuilder/omega/utils"
 
 	// "runtime/pprof"
@@ -629,7 +630,7 @@ func (o *LuaComponenter) Activate() {
 				cmd += v + " "
 			}
 			if err := o.Monitor.CmdCenter(cmd); err != nil {
-				lf.PrintInfo(lf.NewPrintMsg("警告", err))
+				utils2.PrintInfo(utils2.NewPrintMsg("警告", err))
 			}
 			return is
 		})

@@ -8,6 +8,7 @@ import (
 	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/Package"
 	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/luaConfig"
 	omgApi "phoenixbuilder/omega/mainframe/lang_support/lua_frame/omgcomponentapi"
+	"phoenixbuilder/omega/mainframe/lang_support/lua_frame/utils"
 	"reflect"
 	"sync"
 
@@ -27,9 +28,9 @@ type Monitor struct {
 	//区别点在于lua的优势导致 这个插件能够热重载以及能够修改其中的主要逻辑
 	ComponentPoll map[string]*LuaComponent
 	//omg框架
-	LuaComponentData map[string]Result
+	LuaComponentData map[string]utils.Result
 	OmgFrame         *omgApi.OmgApi
-	FileControl      *FileControl
+	FileControl      *utils.FileControl
 	BuiltlnFner      *BuiltlnFn.BuiltlnFn
 }
 
@@ -54,7 +55,7 @@ func NewMonitor(lc *omgApi.OmgApi) *Monitor {
 			Listener:         sync.Map{},
 			PackageChanSlice: []*Package.PackageChan{},
 		},
-		FileControl: &FileControl{},
+		FileControl: &utils.FileControl{},
 	}
 
 }
@@ -62,16 +63,16 @@ func NewMonitor(lc *omgApi.OmgApi) *Monitor {
 // 接受指令处理并且执行
 func (m *Monitor) CmdCenter(msg string) error {
 
-	CmdMsg := FormateCmd(msg)
-	if !CmdMsg.isCmd {
+	CmdMsg := utils.FormateCmd(msg)
+	if !CmdMsg.IsCmd {
 		return errors.New(fmt.Sprintf("很显然%v并不是指令的任何一种 请输入lua luas help寻求帮助", msg))
 	}
 
 	switch CmdMsg.Head {
-	case HEADLUA:
+	case utils.HEADLUA:
 		//lua指令
 		if err := m.luaCmdHandler(&CmdMsg); err != nil {
-			PrintInfo(NewPrintMsg("警告", err))
+			utils.PrintInfo(utils.NewPrintMsg("警告", err))
 		}
 		/*case HEADRELOAD:
 		go func() {
@@ -93,11 +94,11 @@ func (m *Monitor) CmdCenter(msg string) error {
 
 // 插件行为 重加载某个插件 如果参数为all则全部插件重加载 记住reload和startComponent是有区别的
 // reload是再次扫描对应的插件然后默认不开启 而startCompent是直接在插件池子里面开启插件
-func (m *Monitor) Reload(cmdmsg *CmdMsg) error {
+func (m *Monitor) Reload(cmdmsg *utils.CmdMsg) error {
 
 	switch cmdmsg.Behavior {
 	case "component":
-		args := cmdmsg.args
+		args := cmdmsg.Args
 		if len(args) != 1 {
 			return errors.New("lua reload compoent指令后面应该有且仅有一个参数")
 		}
@@ -121,10 +122,10 @@ func (m *Monitor) Reload(cmdmsg *CmdMsg) error {
 		if NewErr := m.RunComponent(componentName); NewErr != nil {
 			return NewErr
 		}
-		PrintInfo(NewPrintMsg("提示", fmt.Sprintf("%v已经重新加载", componentName)))
+		utils.PrintInfo(utils.NewPrintMsg("提示", fmt.Sprintf("%v已经重新加载", componentName)))
 		return nil
 	default:
-		PrintInfo(NewPrintMsg("警告", "无效指令"))
+		utils.PrintInfo(utils.NewPrintMsg("警告", "无效指令"))
 
 	}
 	return nil
@@ -177,8 +178,8 @@ func (m *Monitor) CloseLua(name string) error {
 }
 
 // lua指令类执行
-func (m *Monitor) luaCmdHandler(CmdMsg *CmdMsg) error {
-	args := CmdMsg.args
+func (m *Monitor) luaCmdHandler(CmdMsg *utils.CmdMsg) error {
+	args := CmdMsg.Args
 	switch CmdMsg.Behavior {
 	case "help":
 		warning := []string{
@@ -193,7 +194,7 @@ func (m *Monitor) luaCmdHandler(CmdMsg *CmdMsg) error {
 		for _, v := range warning {
 			msg += v
 		}
-		PrintInfo(NewPrintMsg("提示", msg))
+		utils.PrintInfo(utils.NewPrintMsg("提示", msg))
 	case "new":
 		//参数检查
 		if len(args) != 1 && len(args) != 2 {
@@ -213,7 +214,7 @@ func (m *Monitor) luaCmdHandler(CmdMsg *CmdMsg) error {
 		if err := m.FileControl.CreateDirAndFiles(componentName); err != nil {
 			return err
 		}
-		PrintInfo(NewPrintMsg("提示", fmt.Sprintf("已经创建文件基本结构请到目录%v 修改", filepath.Join(GetOmgConfigPath(), componentName))))
+		utils.PrintInfo(utils.NewPrintMsg("提示", fmt.Sprintf("已经创建文件基本结构请到目录%v 修改", filepath.Join(utils.GetOmgConfigPath(), componentName))))
 
 	case "delect":
 		if len(args) != 1 {
@@ -230,7 +231,7 @@ func (m *Monitor) luaCmdHandler(CmdMsg *CmdMsg) error {
 				msg += fmt.Sprintf("[%v]", k)
 			}
 		}
-		PrintInfo(NewPrintMsg("信息", msg+"处于开启状态"))
+		utils.PrintInfo(utils.NewPrintMsg("信息", msg+"处于开启状态"))
 	/*case "stop":
 	if len(args) != 1 {
 		return errors.New("lua luas stop指令后面应该加上需要删除的插件名字")
@@ -261,14 +262,14 @@ func (m *Monitor) RunComponent(name string) error {
 	//安全关闭
 	if v, ok := m.ComponentPoll[name]; ok {
 		if v.L == nil {
-			PrintInfo(NewPrintMsg("警告", fmt.Sprintf("%v存在于运行池子中 但是lua解释器为nil", name)))
+			utils.PrintInfo(utils.NewPrintMsg("警告", fmt.Sprintf("%v存在于运行池子中 但是lua解释器为nil", name)))
 			//删除
 			delete(m.ComponentPoll, name)
 		}
 		//判断是否存在某个方法
 		method := reflect.ValueOf(v.L).MethodByName("DoString")
 		if !method.IsValid() {
-			PrintInfo(NewPrintMsg("警告", fmt.Sprintf("%v检测如果调用loadfille会触发错误", name)))
+			utils.PrintInfo(utils.NewPrintMsg("警告", fmt.Sprintf("%v检测如果调用loadfille会触发错误", name)))
 			delete(m.ComponentPoll, name)
 		}
 		//如果启动状态则关闭删除
@@ -307,11 +308,11 @@ func (m *Monitor) RunComponent(name string) error {
 		defer m.CloseLua(newName)
 
 		if _, ok := m.ComponentPoll[name]; !ok {
-			PrintInfo(NewPrintMsg("警告", fmt.Sprintf("%v不存在该组件名字", name)))
+			utils.PrintInfo(utils.NewPrintMsg("警告", fmt.Sprintf("%v不存在该组件名字", name)))
 			return
 		}
 		if err := m.ComponentPoll[name].L.DoString(string(data.Code)); err != nil {
-			PrintInfo(NewPrintMsg("lua代码报错", err))
+			utils.PrintInfo(utils.NewPrintMsg("lua代码报错", err))
 		}
 	}(name)
 	return nil
