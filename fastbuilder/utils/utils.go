@@ -44,16 +44,17 @@ func GetMD5(i string) string {
 }
 
 func CheckUpdate(currentVersion string) (bool, string) {
-	version_regexp := regexp.MustCompile("^v?((\\d+).(\\d+).(\\d+))$")
+  version_regexp := regexp.MustCompile("^(Dev)?((\\d+).(\\d+).(\\d+))$")
 	current_version_m := version_regexp.FindAllStringSubmatch(currentVersion, -1)
 	if len(current_version_m) == 0 || len(current_version_m[0]) != 5 {
 		return false, ""
 	}
 	current_major_version, _ := strconv.Atoi(current_version_m[0][2])
 	current_minor_version, _ := strconv.Atoi(current_version_m[0][3])
-	current_patch_version, _ := strconv.Atoi(current_version_m[0][4])
-	resp, err := http.Get("https://api.github.com/repos/LNSSPsd/PhoenixBuilder/releases/latest")
+  current_patch_version, _ := strconv.Atoi(current_version_m[0][4:])
+	resp, err := http.Get("https://api.github.com/repos/rnhws-Team/PhoenixBuilder/releases/latest")
 	if err != nil {
+
 		fmt.Printf("Failed to check update!\nPlease check your network status.\n")
 		return false, ""
 	}
@@ -80,7 +81,7 @@ func CheckUpdate(currentVersion string) (bool, string) {
 	}
 	latest_major_version, _ := strconv.Atoi(regexp_res[0][2])
 	latest_minor_version, _ := strconv.Atoi(regexp_res[0][3])
-	latest_patch_version, _ := strconv.Atoi(regexp_res[0][4])
+  latest_patch_version, _ := strconv.Atoi(regexp_res[0][4:])
 	if current_major_version < latest_major_version {
 		return true, regexp_res[0][1]
 	} else if current_major_version == latest_major_version {
