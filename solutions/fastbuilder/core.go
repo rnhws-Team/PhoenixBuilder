@@ -2,9 +2,7 @@ package fastbuilder
 
 import (
 	"bufio"
-	"bytes"
 	"context"
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -16,6 +14,7 @@ import (
 	"phoenixbuilder/fastbuilder/function"
 	I18n "phoenixbuilder/fastbuilder/i18n"
 	"phoenixbuilder/fastbuilder/move"
+	"phoenixbuilder/fastbuilder/py_rpc"
 	"phoenixbuilder/fastbuilder/readline"
 	script_bridge "phoenixbuilder/fastbuilder/script_engine/bridge"
 	"phoenixbuilder/fastbuilder/signalhandler"
@@ -62,11 +61,19 @@ func EnterReadlineThread(env *environment.PBEnvironment, breaker chan struct{}) 
 			continue
 		}
 		if cmd[0] == '.' {
-			resp, _ := gameInterface.SendCommandWithResponse(cmd[1:])
-			fmt.Printf("%+v\n", resp)
+			resp := gameInterface.SendCommandWithResponse(cmd[1:])
+			if resp.Error != nil {
+				pterm.Error.Printf(`Failed to get respond of "%v", and the following is the error log.%v`, cmd[1:], "\n"+resp.Error.Error()+"\n")
+			} else {
+				pterm.Success.Printf("%+v\n", resp.Respond)
+			}
 		} else if cmd[0] == '!' {
-			resp, _ := gameInterface.SendWSCommandWithResponse(cmd[1:])
-			fmt.Printf("%+v\n", resp)
+			resp := gameInterface.SendWSCommandWithResponse(cmd[1:])
+			if resp.Error != nil {
+				pterm.Error.Printf(`Failed to get respond of "%v", and the following is the error log.%v`, cmd[1:], "\n"+resp.Error.Error()+"\n")
+			} else {
+				pterm.Success.Printf("%+v\n", resp.Respond)
+			}
 		}
 		functionHolder.Process(cmd)
 	}
@@ -93,15 +100,6 @@ func EnterWorkerThread(env *environment.PBEnvironment, breaker chan struct{}) {
 			}
 		}
 
-		env.Connection.(*minecraft.Conn).WritePacket(
-			&packet.TickSync{
-				ClientRequestTimestamp:   0,
-				ServerReceptionTimestamp: 0,
-			},
-		)
-		// Used to sync the current game tick.
-		// "ResoucesControlCenter.Resources.Others.currentTick" related.
-
 		pk, data, err := conn.ReadPacketAndBytes()
 		if err != nil {
 			panic(err)
@@ -110,76 +108,51 @@ func EnterWorkerThread(env *environment.PBEnvironment, breaker chan struct{}) {
 		{
 			p, ok := pk.(*packet.PyRpc)
 			if ok {
-				if strings.Contains(string(p.Content), "GetStartType") {
-					// 2021-12-22 10:51~11:55
-					// 2023-05-30
-					// Thank netease for wasting my time again ;)
-					//fmt.Printf("%X\n", p.Content)
-					encData := p.Content[len(p.Content)-163 : len(p.Content)-1]
-					//fmt.Printf("%s\n", p.Content)
-					//fmt.Printf("%s\n", encData)
-					//fmt.Printf("%s\n", env.Uid)
-					client := env.FBAuthClient.(*fbauth.Client)
-					response := client.TransferData(string(encData), fmt.Sprintf("%s", env.Uid))
-					//fmt.Printf("%s\n", response)
+				go_p_val := p.Value.MakeGo()
+				//json_val, _:=json.MarshalIndent(go_p_val, "", "\t")
+				//fmt.Printf("Received PyRpc: %s\n", json_val)
+				pyrpc_val := go_p_val.([]interface{})
+				command := pyrpc_val[0].(string)
+				data := pyrpc_val[1].([]interface{})
+				if command == "S2CHeartBeat" {
 					conn.WritePacket(&packet.PyRpc{
-						Content: bytes.Join([][]byte{[]byte{0x82, 0xc4, 0x8, 0x5f, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x5f, 0x5f, 0xc4, 0x5, 0x74, 0x75, 0x70, 0x6c, 0x65, 0xc4, 0x5, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x93, 0xc4, 0xc, 0x53, 0x65, 0x74, 0x53, 0x74, 0x61, 0x72, 0x74, 0x54, 0x79, 0x70, 0x65, 0x82, 0xc4, 0x8, 0x5f, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x5f, 0x5f, 0xc4, 0x5, 0x74, 0x75, 0x70, 0x6c, 0x65, 0xc4, 0x5, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x91, 0xc4},
-							[]byte{byte(len(response))},
-							[]byte(response),
-							[]byte{0xc0},
-						}, []byte{}),
+						Value: py_rpc.FromGo([]interface{}{
+							"C2SHeartBeat",
+							data,
+							nil,
+						}),
 					})
-					//fmt.Printf("%s\n", response)
-				} else if strings.Contains(string(p.Content), "GetMCPCheckNum") {
-					// This shit sucks, so as netease.
+				} else if command == "GetStartType" {
+					client := env.FBAuthClient.(*fbauth.Client)
+					response := client.TransferData(data[0].(string), fmt.Sprintf("%s", env.FBAuthClient.(*fbauth.Client).Uid))
+					conn.WritePacket(&packet.PyRpc{
+						Value: py_rpc.FromGo([]interface{}{
+							"SetStartType",
+							[]interface{}{response},
+							nil,
+						}),
+					})
+				} else if command == "GetMCPCheckNum" {
 					if getchecknum_everPassed {
 						continue
 					}
-					//fmt.Printf("%X", p.Content)
-					firstArgLenB := p.Content[19:21]
-					firstArgLen := binary.BigEndian.Uint16(firstArgLenB)
-					firstArg := string(p.Content[21 : 21+firstArgLen])
-					secondArgLen := uint16(p.Content[23+firstArgLen])
-					secondArg := string(p.Content[24+firstArgLen : 24+firstArgLen+secondArgLen])
-					//fmt.Printf("%s\n%s\n",firstArg, secondArg)
-					//fmt.Printf("%v\n", env.Connection.(*minecraft.Conn).GameData().EntityUniqueID)
-					//fmt.Printf("%X\n", p.Content)
-					//valM,_:=getUserInputMD5()
-					//valS,_:=getUserInputMD5()
-					//valT,_:=getUserInputMD5()
-
+					firstArg := data[0].(string)
+					secondArg := (data[1].([]interface{}))[0].(string)
 					client := env.FBAuthClient.(*fbauth.Client)
-					valM, valS, valT := client.TransferCheckNum(firstArg, secondArg, env.Connection.(*minecraft.Conn).GameData().EntityUniqueID)
-
-					/*conn.WritePacket(&packet.PyRpc{
-						Content: bytes.Join([][]byte{[]byte{0x82, 0xc4, 0x8, 0x5f, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x5f, 0x5f, 0xc4, 0x5, 0x74, 0x75, 0x70, 0x6c, 0x65, 0xc4, 0x5, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x93, 0xc4, 0xe, 0x53, 0x65, 0x74, 0x4d, 0x43, 0x50, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x4e, 0x75, 0x6d, 0x82, 0xc4, 0x8, 0x5f, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x5f, 0x5f, 0xc4, 0x5, 0x74, 0x75, 0x70, 0x6c, 0x65, 0xc4, 0x5, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x91, 0xc4, 0x20},
-							[]byte(valM),
-							[]byte{0xc0},
-						}, []byte{}),
-					})*/
+					arg, _ := json.Marshal([]interface{}{firstArg, secondArg, env.Connection.(*minecraft.Conn).GameData().EntityUniqueID})
+					ret := client.TransferCheckNum(string(arg))
+					ret_p := []interface{}{}
+					json.Unmarshal([]byte(ret), &ret_p)
 					conn.WritePacket(&packet.PyRpc{
-						Content: bytes.Join([][]byte{[]byte{0x93, 0xc4, 0x0e}, []byte("SetMCPCheckNum"), []byte{0x91, 0x98, 0xc4, 0x20},
-							[]byte(valM),
-							[]byte{0xc4, 0x20},
-							[]byte(valS),
-							[]byte{0xc2},
-							[]byte{0x90},
-							[]byte{0xc4, 0x00},
-							[]byte{0xc4, 0x00},
-							[]byte{3},
-							[]byte{0xc4, 0x20},
-							[]byte(valT),
-							[]byte{0xC0},
-						}, []byte{}),
+						Value: py_rpc.FromGo([]interface{}{
+							"SetMCPCheckNum",
+							[]interface{}{
+								ret_p,
+							},
+							nil,
+						}),
 					})
 					getchecknum_everPassed = true
-					/*go func() {
-						time.Sleep(3*time.Second)
-						resp, _ := env.GlobalAPI.(*GlobalAPI.GlobalAPI).SendCommandWithResponce("list")
-						fmt.Printf("%+v\n", resp)
-					} ()*/
-				} else {
-					//fmt.Printf("PyRpc! %s\n", p.Content)
 				}
 			}
 		}
@@ -302,7 +275,8 @@ func EnterWorkerThread(env *environment.PBEnvironment, breaker chan struct{}) {
 
 func EstablishConnectionAndInitEnv(env *environment.PBEnvironment) {
 	if env.FBAuthClient == nil {
-		env.FBAuthClient = fbauth.CreateClient(env)
+		env.ClientOptions.AuthServer = args.AuthServer
+		env.FBAuthClient = fbauth.CreateClient(env.ClientOptions)
 	}
 	pterm.Println(pterm.Yellow(fmt.Sprintf("%s: %s", I18n.T(I18n.ServerCodeTrans), env.LoginInfo.ServerCode)))
 
@@ -381,8 +355,8 @@ func EstablishConnectionAndInitEnv(env *environment.PBEnvironment) {
 			env.GameInterface.SendCommand(mcCmd)
 			return nil
 		}
-		resp, _ := env.GameInterface.SendCommandWithResponse(mcCmd)
-		return &resp
+		resp := env.GameInterface.SendCommandWithResponse(mcCmd)
+		return &resp.Respond
 	})
 	hostBridgeGamma.HostConnectEstablished()
 	defer hostBridgeGamma.HostConnectTerminate()

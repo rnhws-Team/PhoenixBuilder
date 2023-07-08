@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"phoenixbuilder/fastbuilder/bdump"
 	"phoenixbuilder/fastbuilder/configuration"
+	fbauth "phoenixbuilder/fastbuilder/cv4/auth"
 	"phoenixbuilder/fastbuilder/environment"
 	"phoenixbuilder/fastbuilder/mcstructure"
 	"phoenixbuilder/fastbuilder/parsing"
@@ -65,8 +66,8 @@ func CreateLegacyExportTask(commandLine string, env *environment.PBEnvironment) 
 
 		gameInterface.SendWSCommand("gamemode c")
 
-		resp, _ := gameInterface.SendWSCommandWithResponse("querytarget @s")
-		parseResult, _ := gameInterface.ParseTargetQueryingInfo(resp)
+		resp := gameInterface.SendWSCommandWithResponse("querytarget @s")
+		parseResult, _ := gameInterface.ParseTargetQueryingInfo(resp.Respond)
 		var testAreaIsLoaded string = "testforblocks ~-31 -64 ~-31 ~31 319 ~31 ~-31 -64 ~-31"
 		if parseResult[0].Dimension == 1 {
 			testAreaIsLoaded = "testforblocks ~-31 0 ~-31 ~31 127 ~31 ~-31 0 ~-31"
@@ -92,8 +93,8 @@ func CreateLegacyExportTask(commandLine string, env *environment.PBEnvironment) 
 			gameInterface.SendWSCommandWithResponse(fmt.Sprintf("tp %d %d %d", value.BeginX+value.SizeX/2, value.BeginY+value.SizeY/2, value.BeginZ+value.SizeZ/2))
 
 			for {
-				resp, _ := gameInterface.SendWSCommandWithResponse(testAreaIsLoaded)
-				if resp.OutputMessages[0].Message != "commands.generic.outOfWorld" {
+				resp := gameInterface.SendWSCommandWithResponse(testAreaIsLoaded)
+				if resp.Respond.OutputMessages[0].Message != "commands.generic.outOfWorld" {
 					break
 				}
 			}
@@ -151,7 +152,7 @@ func CreateLegacyExportTask(commandLine string, env *environment.PBEnvironment) 
 		}
 
 		env.GameInterface.Output(pterm.Info.Sprint("Writing output file......"))
-		err, signerr := outputResult.WriteToFile(cfg.Path, env.LocalCert, env.LocalKey)
+		err, signerr := outputResult.WriteToFile(cfg.Path, env.FBAuthClient.(*fbauth.Client).LocalCert, env.FBAuthClient.(*fbauth.Client).LocalKey)
 		if err != nil {
 			env.GameInterface.Output(pterm.Error.Sprintf("Failed to export: %v", err))
 			return

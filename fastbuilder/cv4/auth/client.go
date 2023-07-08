@@ -14,44 +14,56 @@ import (
 	"fmt"
 	"io"
 
-	"phoenixbuilder/fastbuilder/args"
-	"phoenixbuilder/fastbuilder/environment"
 	I18n "phoenixbuilder/fastbuilder/i18n"
 
 	"github.com/gorilla/websocket"
 	"github.com/pterm/pterm"
 )
 
+type ClientOptions struct {
+	AuthServer   string
+	FBUCUsername string
+}
+
+func MakeDefaultClientOptions() *ClientOptions {
+	return &ClientOptions{
+		AuthServer:   "wss://api.fastbuilder.pro:2053/",
+		FBUCUsername: "",
+	}
+}
+
 type Client struct {
-	privateKey   *ecdsa.PrivateKey
-	rsaPublicKey *rsa.PublicKey
-
-	salt   []byte
-	client *websocket.Conn
-
+	privateKey       *ecdsa.PrivateKey
+	rsaPublicKey     *rsa.PublicKey
+	salt             []byte
+	client           *websocket.Conn
 	peerNoEncryption bool
 	encryptor        *encryptionSession
 	serverResponse   chan map[string]interface{}
+	closed           bool
+	options          *ClientOptions
 
-	closed bool
-
-	env *environment.PBEnvironment
+	Uid              string
+	CertSigning      bool
+	LocalKey         string
+	LocalCert        string
+	WorldChatChannel chan []string
 }
 
-func CreateClient(env *environment.PBEnvironment) *Client {
+func CreateClient(options *ClientOptions) *Client {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	if err != nil {
 		panic(err)
 	}
-	salt := []byte("2345678987654321")
+	salt := []byte("23456789f7654321")
 	authclient := &Client{
 		privateKey:     privateKey,
 		salt:           salt,
 		serverResponse: make(chan map[string]interface{}),
 		closed:         false,
-		env:            env,
+		options:        options,
 	}
-	cl, _, err := websocket.DefaultDialer.Dial(args.AuthServer, nil)
+	cl, _, err := websocket.DefaultDialer.Dial(options.AuthServer, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -99,7 +111,7 @@ func CreateClient(env *environment.PBEnvironment) *Client {
 				chat_msg, _ := message["msg"].(string)
 				chat_sender, _ := message["username"].(string)
 				select {
-				case env.WorldChatChannel <- []string{chat_sender, chat_msg}:
+				case authclient.WorldChatChannel <- []string{chat_sender, chat_msg}:
 					continue
 				default:
 					continue
@@ -177,9 +189,8 @@ func (client *Client) Auth(ctx context.Context, serverCode string, serverPasswor
 		ServerPassword: serverPassword,
 		Key:            key,
 		FBToken:        fbtoken,
-		VersionId:      3,
-		// Both versionId 2 and 3 are supported currently
-		// Version ID 3 has server message support.
+		VersionId:      4,
+		// New format of PyRpc
 
 		// ^
 		// The implemention of version_id is in no way for the purpose
@@ -216,25 +227,25 @@ Retry:
 		}
 		uc_username, _ := resp["username"].(string)
 		u_uid, _ := resp["uid"].(string)
-		client.env.FBUCUsername = uc_username
-		client.env.Uid = u_uid
+		client.options.FBUCUsername = uc_username
+		client.Uid = u_uid
 		str, _ := resp["chainInfo"].(string)
-		client.env.CertSigning = true
+		client.CertSigning = true
 		if signingKey, success := resp["privateSigningKey"].(string); success {
-			client.env.LocalKey = signingKey
+			client.LocalKey = signingKey
 		} else {
 			pterm.Error.Println("Failed to fetch privateSigningKey from server")
-			client.env.CertSigning = false
-			client.env.LocalKey = ""
+			client.CertSigning = false
+			client.LocalKey = ""
 		}
 		if keyProve, success := resp["prove"].(string); success {
-			client.env.LocalCert = keyProve
+			client.LocalCert = keyProve
 		} else {
 			pterm.Error.Println("Failed to fetch keyProve from server")
-			client.env.CertSigning = false
-			client.env.LocalCert = ""
+			client.CertSigning = false
+			client.LocalCert = ""
 		}
-		if !client.env.CertSigning {
+		if !client.CertSigning {
 			pterm.Error.Println("CertSigning is disabled for errors above.")
 		}
 		return str, 0, nil
@@ -274,6 +285,16 @@ type FTokenRequest struct {
 }
 
 func (client *Client) GetToken(username string, password string) (string, string) {
+	if username!=""{
+		tokenstruct := &map[string]interface{}{
+			"encrypt_token": true,
+			"username":      username,
+			"password":      password,
+		}
+		bytes_token, _ := json.Marshal(tokenstruct)
+		password=string(bytes_token)
+		username=""
+	}
 	rspreq := &FTokenRequest{
 		Action:   "phoenix::get-token",
 		Username: username,
@@ -321,17 +342,13 @@ func (client *Client) TransferData(content string, uid string) string {
 
 type FNumRequest struct {
 	Action string `json:"action"`
-	First  string `json:"1st"`
-	Second string `json:"2nd"`
-	Third  int64  `json:"3rd"`
+	Data   string `json:"data"`
 }
 
-func (client *Client) TransferCheckNum(first string, second string, third int64) (string, string, string) {
+func (client *Client) TransferCheckNum(data string) string {
 	rspreq := &FNumRequest{
 		Action: "phoenix::transfer-check-num",
-		First:  first,
-		Second: second,
-		Third:  third,
+		Data:   data,
 	}
 	msg, err := json.Marshal(rspreq)
 	if err != nil {
@@ -343,10 +360,8 @@ func (client *Client) TransferCheckNum(first string, second string, third int64)
 	if code != 0 {
 		panic(fmt.Errorf("Failed to transfer checknum: %s", resp["message"]))
 	}
-	valM, _ := resp["valM"].(string)
-	valS, _ := resp["valS"].(string)
-	valT, _ := resp["valT"].(string)
-	return valM, valS, valT
+	val, _ := resp["value"].(string)
+	return val
 }
 
 type WorldChatRequest struct {
