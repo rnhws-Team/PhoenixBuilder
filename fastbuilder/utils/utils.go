@@ -51,7 +51,7 @@ func CheckUpdate(currentVersion string) (bool, string) {
 	}
 	current_major_version, _ := strconv.Atoi(current_version_m[0][2])
 	current_minor_version, _ := strconv.Atoi(current_version_m[0][3])
-  current_patch_version, _ := strconv.Atoi(current_version_m[0][4:])
+  	current_patch_version, _ := strconv.Atoi(current_version_m[0][4])
 	resp, err := http.Get("https://api.github.com/repos/rnhws-Team/PhoenixBuilder/releases/latest")
 	if err != nil {
 
@@ -81,7 +81,7 @@ func CheckUpdate(currentVersion string) (bool, string) {
 	}
 	latest_major_version, _ := strconv.Atoi(regexp_res[0][2])
 	latest_minor_version, _ := strconv.Atoi(regexp_res[0][3])
-  latest_patch_version, _ := strconv.Atoi(regexp_res[0][4:])
+  	latest_patch_version, _ := strconv.Atoi(regexp_res[0][4])
 	if current_major_version < latest_major_version {
 		return true, regexp_res[0][1]
 	} else if current_major_version == latest_major_version {
