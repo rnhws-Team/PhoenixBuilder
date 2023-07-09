@@ -8,20 +8,6 @@ import (
 	"strings"
 )
 
-// Item 结构体用于描述单个的物品
-type Item struct {
-	Name   string // Name(TAG_String) = ""
-	Count  uint8  // Count(TAG_Byte) = 0
-	Damage uint16 // TAG_Short = 0
-	Slot   uint8  // Slot(TAG_Byte) = 0
-}
-
-// Container 结构体用于描述一个容器
-type Container struct {
-	BlockEntity *BlockEntity // 该方块实体的详细数据
-	Items       []Item       // 容器内的物品数据
-}
-
 // 检查一个方块是否是已被支持的有效的容器。
 // 这里的 有效 指的是可以被 replaceitem 命令生效的容器。
 // 如果不是已被支持的容器，则返回长度为 0 的空字符串

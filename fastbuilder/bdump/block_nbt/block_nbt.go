@@ -61,7 +61,47 @@ type BlockEntity struct {
 	AdditionalData AdditionalData
 }
 
+// ------------------------- command_block -------------------------
+
+// 描述单个命令方块中已解码的部分
+type CommandBlockData struct {
+	Command            string // Command(TAG_String) = ""
+	CustomName         string // CustomName(TAG_String) = ""
+	LastOutput         string // LastOutput(TAG_String) = ""
+	TickDelay          int32  // TickDelay(TAG_Int) = 0
+	ExecuteOnFirstTick bool   // ExecuteOnFirstTick(TAG_Byte) = 1
+	TrackOutput        bool   // TrackOutput(TAG_Byte) = 1
+	ConditionalMode    bool   // conditionalMode(TAG_Byte) = 0
+	Auto               bool   // auto(TAG_Byte) = 1
+}
+
+// CommandBlock 结构体用于描述一个完整的命令方块数据
+type CommandBlock struct {
+	// 该方块实体的详细数据
+	BlockEntity *BlockEntity
+	// 存放已解码的命令方块数据
+	CommandBlockData
+	// 为向下兼容而设，因为旧方法下不需要放置命令方块
+	ShouldPlaceBlock bool
+}
+
 // ------------------------- Container -------------------------
+
+// Item 结构体用于描述单个的物品
+type Item struct {
+	Name   string // Name(TAG_String) = ""
+	Count  uint8  // Count(TAG_Byte) = 0
+	Damage uint16 // TAG_Short = 0
+	Slot   uint8  // Slot(TAG_Byte) = 0
+}
+
+// 描述一个容器
+type Container struct {
+	// 该方块实体的详细数据
+	BlockEntity *BlockEntity
+	// 容器内的物品数据
+	Items []Item
+}
 
 // 未被支持的容器会被应用此错误信息。
 // 用于 Container.go 中的 ReplaceNBTMapToContainerList 等函数
@@ -69,5 +109,13 @@ var ErrNotASupportedContainer error = fmt.Errorf("replaceNBTMapToContainerList: 
 
 // 用于 Container.go 中的 ReplaceNBTMapToContainerList 等函数
 var KeyName string = "data"
+
+// ------------------------- sign -------------------------
+
+// 描述一个告示牌
+type Sign struct {
+	// 该方块实体的详细数据
+	BlockEntity *BlockEntity
+}
 
 // ------------------------- END -------------------------
