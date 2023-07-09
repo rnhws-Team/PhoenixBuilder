@@ -87,12 +87,69 @@ type CommandBlock struct {
 
 // ------------------------- container -------------------------
 
-// Item 结构体用于描述单个的物品
-type Item struct {
+// 描述单个物品在解码前的 NBT 表达形式
+type ItemOrigin map[string]interface{}
+
+// 描述物品的单个附魔属性
+type Enchantment struct {
+	ID    uint8 // 该附魔属性的 ID
+	Level int16 // 该附魔属性的等级
+}
+
+// 描述单个物品的物品组件数据
+type ItemComponents struct {
+	CanPlaceOn  []string
+	CanBreak    []string
+	ItemLock    string
+	KeepOnDeath bool
+}
+
+// 描述单个物品的自定义数据。
+// 这些数据实际上并不存在，
+// 只是我们为了区分一些特殊的物品而设
+type ItemCustomData struct {
+	/*
+		假设该物品本身就是一个带有 NBT 的方块，
+		那么如果我们已经在 PhoenixBuilder 实现了这些方块的 NBT 注入，
+		那么对于箱子内的这些物品来说，
+		我们也仍然可以通过 PickBlock 的方法来实现对它们的兼容。
+
+		因此，如果该物品带有 NBT 且是一个方块，
+		那么此字段不为空指针。
+	*/
+	Tag *GeneralBlock
+	/*
+		这个物品可能是一本写了字或者签过名的书，
+		而此字段描述的书上的具体内容及签名相关的数据。
+
+		因此，如果该物品是书且写了字或者签过名，
+		那么此值不为空指针。
+
+		TODO: 兼容此特性
+	*/
+	// BookData *...
+}
+
+// 描述单个物品的基本数据
+type ItemBasicData struct {
 	Name   string // Name(TAG_String) = ""
 	Count  uint8  // Count(TAG_Byte) = 0
 	Damage uint16 // TAG_Short = 0
 	Slot   uint8  // Slot(TAG_Byte) = 0
+}
+
+// 描述单个物品的附加数据
+type ItemAdditionalData struct {
+	DisplayName    string         // 该物品的显示名称
+	Enchantments   []Enchantment  // 该物品的附魔属性
+	ItemComponents ItemComponents // 该物品的物品组件
+}
+
+// 描述一个单个的物品
+type Item struct {
+	Basic      ItemBasicData      // 该物品的基本数据
+	Additional ItemAdditionalData // 该物品的附加数据
+	Custom     ItemCustomData     // 由 PhoenixBuilder 定义的自定义数据
 }
 
 // 描述一个容器
@@ -100,7 +157,7 @@ type Container struct {
 	// 该方块实体的详细数据
 	BlockEntity *BlockEntity
 	// 容器内的物品数据
-	Items []Item
+	ItemContents []Item
 }
 
 // 未被支持的容器会被应用此错误信息。

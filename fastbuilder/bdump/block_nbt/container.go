@@ -8,34 +8,42 @@ import (
 	"strings"
 )
 
-// 检查一个方块是否是已被支持的有效的容器。
-// 这里的 有效 指的是可以被 replaceitem 命令生效的容器。
-// 如果不是已被支持的容器，则返回长度为 0 的空字符串
-func (c *Container) containerSupported() string {
-	value, ok := SupportContainerPool[c.BlockEntity.Block.Name]
-	if ok {
-		return value
-	}
-	return ""
-}
-
-// 从容器的 NBT 数据提取物品数据；结果会被替换在 c.Package.Block.NBT[KeyName] 中
-func (c *Container) replaceNBTMapToContainerList() error {
-	key := c.containerSupported()
+// 从名为 blockName 的容器提取物品数据，
+// containerOriginNBT 代表该容器的方块实体数据，
+// 返回的列表代表提取到的每个物品
+func getContainerContents(
+	blockName string,
+	containerOriginNBT map[string]interface{},
+) ([]ItemOrigin, error) {
+	key := SupportContainerPool[blockName]
 	if len(key) == 0 {
-		return ErrNotASupportedContainer
+		return nil, ErrNotASupportedContainer
 	}
-	// 这里是确定一下这个容器是否是我们支持了的容器
-	value, ok := c.BlockEntity.Block.NBT[key]
+	// 确定目标容器是否已被支持
+	itemContentsGot, ok := containerOriginNBT[key]
+	// 从 containerOriginNBT 获取物品的数据
 	if !ok {
-		c.BlockEntity.Block.NBT = map[string]interface{}{KeyName: []interface{}{}}
-	} else {
-		c.BlockEntity.Block.NBT = map[string]interface{}{KeyName: value}
+		return []ItemOrigin{}, nil
 	}
-	// 对于唱片机和讲台这种容器，如果它们没有被放物品的话，那么对应的 key 是找不到的
-	// 但是这并非是错误
-	return nil
-	// 返回值
+	// 对于唱片机和讲台这种容器，如果它们没有被放物品的话，
+	// 那么对应的 key 是找不到的，但是这并非是错误
+	switch itemContents := itemContentsGot.(type) {
+	case map[string]interface{}:
+		return []ItemOrigin{itemContents}, nil
+	case []interface{}:
+		res := []ItemOrigin{}
+		for key, value := range itemContents {
+			singleItem, sucess := value.(map[string]interface{})
+			if !sucess {
+				return nil, fmt.Errorf(`getContainerContents: Crashed on itemContents[%d]; itemContents = %#v`, key, itemContents)
+			}
+			res = append(res, singleItem)
+		}
+		return res, nil
+	default:
+		return nil, fmt.Errorf(`getContainerContents: Unexpected data type of itemContentsGot; itemContentsGot = %#v`, itemContentsGot)
+	}
+	// 处理方块实体数据并返回值
 }
 
 // 从 c.Package.Block.NBT 提取物品数据并保存在 c.Items 中
