@@ -168,5 +168,3 @@ type others struct {
 	// 数据类型为 map[uuid.UUID]chan int64
 	currentTickRequestWithResp sync.Map
 }
-
-// ------------------------- END -------------------------

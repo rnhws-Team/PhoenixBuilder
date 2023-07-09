@@ -85,7 +85,7 @@ type CommandBlock struct {
 	ShouldPlaceBlock bool
 }
 
-// ------------------------- Container -------------------------
+// ------------------------- container -------------------------
 
 // Item 结构体用于描述单个的物品
 type Item struct {
@@ -117,5 +117,3 @@ type Sign struct {
 	// 该方块实体的详细数据
 	BlockEntity *BlockEntity
 }
-
-// ------------------------- END -------------------------
