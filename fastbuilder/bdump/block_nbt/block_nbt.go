@@ -156,16 +156,13 @@ type Item struct {
 type Container struct {
 	// 该方块实体的详细数据
 	BlockEntity *BlockEntity
-	// 容器内的物品数据
-	ItemContents []Item
+	// 容器的内容物
+	Contents []Item
 }
 
 // 未被支持的容器会被应用此错误信息。
-// 用于 Container.go 中的 ReplaceNBTMapToContainerList 等函数
-var ErrNotASupportedContainer error = fmt.Errorf("replaceNBTMapToContainerList: Not a supported container")
-
-// 用于 Container.go 中的 ReplaceNBTMapToContainerList 等函数
-var KeyName string = "data"
+// 用于 Container.go 中的 getContainerContents 等函数
+var ErrNotASupportedContainer error = fmt.Errorf("getContainerContents: Not a supported container")
 
 // ------------------------- sign -------------------------
 
