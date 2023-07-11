@@ -1,0 +1,11 @@
+{
+    "database_folder": "AppData/AppDataBase",
+    "databases": [
+        "AppDataBase_Main.db",
+        "AppDataBase_Web.db",
+        "AppDataBase_Game.db"
+    ],
+    "default_table": "main",
+    "static_folder": "AppData/static",
+    "template_folder":"AppData/templates"
+}

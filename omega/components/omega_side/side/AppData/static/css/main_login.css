@@ -1,0 +1,29 @@
+.center{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 700px;
+}
+.login_ui{
+    width: 520px; 
+    height: 340px; 
+    background-color:rgba(255, 255, 255, 0.123);
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
+    border-bottom-left-radius: 20px;
+    background-color: rgba(89, 238, 176, 0.336);
+    
+}
+html,body{
+    height: 100%;
+}
+body{
+    background-image: url('../static/img/01.png');
+}
+.text_center{
+    text-align:center;
+}
+.text_1{
+    margin-top:30px;
+}
