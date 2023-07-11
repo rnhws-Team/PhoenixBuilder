@@ -19,23 +19,23 @@
 </head>
   <body class="center">
     <!-- <div class="card div_1">
-        <h2 class="msg_1">欢迎使用WebServerDataManage面板</h2>
-        <p class="msg_1">WebServerDataManage可以帮助您更好的管理您的服务器服务器</p>
+        <h2 class="msg_1">欢迎使用NewWeb</h2>
+        <p class="msg_1">NewWeb可以帮助您更好的管理您的服务器服务器</p>
     </div> -->
 
     <div class="container mt-3">
         <div class="card div_1 " id="init1">
           <div class="card-body msg_1">
-            <h2 class="msg_1">欢迎使用WSDM面板</h2>
+            <h2 class="msg_1">欢迎使用NewWeb</h2>
             <br>
-            <h4 class="msg_1">WebServerDataManage可以帮助您更好的管理您的服务器</h4>
+            <h4 class="msg_1">NewWeb可以帮助您更好的管理您的服务器</h4>
             <br><br>
             <button type="button" class="btn btn-primary btn_1" onclick="init2()">开始使用</button>
             <footer class="hui-layout-footer">
                 <div class="hui-footer">
                   <div class="hui-layout-content">
                     <nav class="hui-footer-nav">
-                      <a target="_blank" href="/">关于WebServerDataManage</a>
+                      <a target="_blank" href="/">关于NewWeb</a>
                       <span class="hui-pipe">|</span>
                       <a target="_blank" href="/">软件著作权</a>
                       <span class="hui-pipe">|</span>
