@@ -319,13 +319,7 @@ class Web_Core (object):
                         "href": f"/{token}/page/player",
                         "icon": "fa fa-window-maximize",
                         "target": "_self"
-                        },
-                        {
-                        "title": "系统设置",
-                        "href": "./layuimini-v2/page/setting.html",
-                        "icon": "fa fa-gears",
-                        "target": "_self"
-                        }
+                        }        
                     ]}
                 ]}
 
