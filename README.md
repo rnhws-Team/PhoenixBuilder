@@ -1,5 +1,3 @@
-<h1 align="center">由于最近的倒卖免费Schem文件而导致的舆论事件，此仓库下载将重定向至官方分支，且本分支将在本事件结束前停止维护</h1>
-
 <h1 align="center">PhoenixBuilder-Dev</h1>
 <p align="center">
   <a href="https://github.com/rnhws-Team/PhoenixBuilder/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-AGPL%203.0-brightgreen.svg?style=flat" alt="LICENSE"></a>
