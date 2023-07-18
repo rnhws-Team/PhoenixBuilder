@@ -1,7 +1,11 @@
 package packets_utils
 
 import (
+	"bytes"
+	"encoding/json"
 	"phoenixbuilder/minecraft/protocol/packet"
+
+	luar "layeh.com/gopher-luar"
 
 	lua "github.com/yuin/gopher-lua"
 )
@@ -18,16 +22,12 @@ type GamePacket struct {
 // 你需要传入包本身 在lua中的名字 在lua中的id
 // 也就是goPacket luaName luaID
 // 会返回给你这个新的包的指针
-func NewGamePacket(
-	goPacket packet.Packet,
-	luaName lua.LString,
-	luaID lua.LNumber,
-) *GamePacket {
-	return &GamePacket{
+func (g *OmegaPacketsModule) NewGamePacket(goPacket packet.Packet, L *lua.LState) lua.LValue {
+	return (&GamePacket{
 		goPacket: goPacket,
-		luaName:  luaName,
-		luaID:    luaID,
-	}
+		luaName:  g.MCPacketIDToLuaName[goPacket.ID()],
+		luaID:    g.MCPacketIDToLuaInt[goPacket.ID()],
+	}).MakeLValue(L)
 }
 
 // 继承game_packet内容
@@ -47,8 +47,10 @@ func registerGamePacket(L *lua.LState) {
 	mt := L.NewTypeMetatable("game_packet")
 	// methods
 	L.SetField(mt, "__index", L.SetFuncs(L.NewTable(), map[string]lua.LGFunction{
-		"id":   gamePacketGetID,
-		"name": gamePacketGetName,
+		"id":        gamePacketGetID,
+		"name":      gamePacketGetName,
+		"user_data": gamePacketToUserData,
+		"json_str":  gamePacketToJsonStr,
 	}))
 }
 
@@ -73,5 +75,25 @@ func gamePacketGetID(L *lua.LState) int {
 func gamePacketGetName(L *lua.LState) int {
 	g := checkGamePacket(L)
 	L.Push(g.luaName)
+	return 1
+}
+
+func gamePacketToUserData(L *lua.LState) int {
+	g := checkGamePacket(L)
+	L.Push(luar.New(L, g.goPacket))
+	return 1
+}
+
+func gamePacketToJsonStr(L *lua.LState) int {
+	g := checkGamePacket(L)
+	buf := bytes.NewBuffer(nil)
+	enc := json.NewEncoder(buf)
+	enc.SetEscapeHTML(false)
+	enc.SetIndent("", "    ")
+	err := enc.Encode(g.goPacket)
+	if err != nil {
+		L.RaiseError(err.Error())
+	}
+	L.Push(lua.LString(buf.String()))
 	return 1
 }
