@@ -20,7 +20,7 @@ func PlaceBlockWithNBTData(
 	defer interfaceLock.Unlock()
 	interfaceLock.Lock()
 	// lock(or unlock) api
-	generalBlock, err := parseBlockModule(blockInfo)
+	generalBlock, err := ParseBlockModule(blockInfo)
 	if err != nil {
 		return fmt.Errorf("PlaceBlockWithNBTData: Failed to place the entity block named %v at (%d,%d,%d), and the error log is %v", *blockInfo.Block.Name, blockInfo.Point.X, blockInfo.Point.Y, blockInfo.Point.Z, err)
 	}
@@ -32,7 +32,7 @@ func PlaceBlockWithNBTData(
 	}
 	newRequest.AdditionalData.BlockStates = blockInfo.Block.BlockStates
 	newRequest.AdditionalData.Position = [3]int32{int32(blockInfo.Point.X), int32(blockInfo.Point.Y), int32(blockInfo.Point.Z)}
-	newRequest.AdditionalData.Type = isNBTBlockSupported(newRequest.Block.Name)
+	newRequest.AdditionalData.Type = IsNBTBlockSupported(newRequest.Block.Name)
 	// get new request of place nbt block
 	var placeBlockMethod GeneralBlockNBT
 	if additionalData.Settings.AssignNBTData || newRequest.AdditionalData.Type == "CommandBlock" {

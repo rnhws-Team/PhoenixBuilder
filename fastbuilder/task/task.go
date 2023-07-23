@@ -308,7 +308,7 @@ func CreateTask(commandLine string, env *environment.PBEnvironment) *Task {
 					pterm.Warning.Printf("%v\n", err)
 				}
 			} else if curblock.ChestSlot != nil {
-				gameInterface.SendSettingsCommand(commands_generator.ReplaceItemRequest(curblock, ""), true)
+				gameInterface.SendSettingsCommand(commands_generator.ReplaceItemInContainerRequest(curblock, ""), true)
 			} else if len(cfg.Entity) != 0 {
 				gameInterface.SendSettingsCommand(commands_generator.SummonRequest(curblock, cfg), true)
 			} else {

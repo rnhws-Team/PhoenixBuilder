@@ -17,7 +17,7 @@ func (d *Default) Decode() error {
 func (d *Default) WriteData() error {
 	err := d.BlockEntity.Interface.SetBlockAsync(d.BlockEntity.AdditionalData.Position, d.BlockEntity.Block.Name, d.BlockEntity.AdditionalData.BlockStates)
 	if err != nil {
-		return fmt.Errorf("placeBlockWithNBTData: %v", err)
+		return fmt.Errorf("WriteData: %v", err)
 	}
 	return nil
 }

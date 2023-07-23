@@ -37,6 +37,14 @@ type GameInterface struct {
 
 // ------------------------- constants -------------------------
 
+// 描述最基本的四大选择器
+const (
+	TargetMySelf        string = "@s"
+	TargetRandom        string = "@r"
+	TargetAllEntity     string = "@e"
+	TargetNearestPlayer string = "@p"
+)
+
 // 用作铁砧的承重方块
 const AnvilBase string = "glass"
 
