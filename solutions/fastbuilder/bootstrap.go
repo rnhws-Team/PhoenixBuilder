@@ -39,8 +39,13 @@ func setup() {
 }
 
 func display_info() {
-	pterm.DefaultBox.Println(pterm.LightCyan("https://github.com/LNSSPsd/PhoenixBuilder"))
-	pterm.Println(pterm.Yellow("PhoenixBuilder " + args.FBVersion))
+	pterm.DefaultBox.Println(pterm.LightCyan("https://github.com/rnhws-Team/PhoenixBuilder"))
+	pterm.Println(pterm.Yellow("PhoenixBuilder Dev " + args.FBVersion))
+	pterm.Println(pterm.Red("版权声明:"))
+	pterm.Println(pterm.Red("此预构建文件并非隶属于官方分支，此预构建文件来自第三方 Dev 预览分支"))
+	pterm.Println(pterm.Red("请勿用于实际生产环境!!!"))
+	pterm.Println(pterm.Red("以下为官方仓库链接"))
+	pterm.Println(pterm.LightCyan("https://github.com/LNSSPsd/PhoenixBuilder"))
 	if I18n.ShouldDisplaySpecial() {
 		fmt.Printf("%s", I18n.T(I18n.Special_Startup))
 	}
