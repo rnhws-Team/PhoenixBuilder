@@ -5,6 +5,7 @@ import (
 	"phoenixbuilder/minecraft/protocol"
 	"phoenixbuilder/minecraft/protocol/packet"
 	"sync"
+	"time"
 )
 
 // ------------------------- Resources -------------------------
@@ -24,17 +25,29 @@ type Resources struct {
 	// 数据包监听器
 	Listener packetListener
 	// 管理和保存其他小型的资源，
-	// 例如例如游戏刻相关
+	// 例如游戏刻相关
 	Others others
 }
 
 // ------------------------- commandRequestWithResponce -------------------------
 
+// 指定单个命令请求中可以自定义的设置项
+type CommandRequestOptions struct {
+	// 描述当前命令请求的最长截止时间，
+	// 当抵达该时间后，将返回超时错误。
+	// 如果此字段为 0 ，则将永远等待，
+	// 直到客户端收到对应的响应体
+	TimeOut time.Duration
+}
+
 // 存放命令请求及结果
 type commandRequestWithResponse struct {
-	// 存放命令请求及返回值队列。
+	// 存放命令请求。
+	// 数据类型为 map[uuid.UUID]CommandRequestOptions
+	request sync.Map
+	// 存放命令请求的响应体。
 	// 数据类型为 map[uuid.UUID](chan packet.CommandOutput)
-	requestWithResponse sync.Map
+	response sync.Map
 }
 
 // 描述命令请求的响应体
@@ -107,8 +120,8 @@ type StackRequestContainerInfo struct {
 	// 其容器对应库存的窗口 ID
 	WindowID uint32
 	// 描述此容器中每个槽位的变动结果，键代表槽位编号，而值代表物品的新值。
-	// 特别地，您无需设置物品数量和 NBT 中的物品名称以及物品的 StackNetworkID 信息，因为
-	// 这些数据会在租赁服发回 ItemStackResponce 后被重新设置
+	// 特别地，您无需设置物品数量以及物品的 StackNetworkID 信息，
+	// 因为这些数据会在租赁服发回 ItemStackResponce 后被重新设置
 	ChangeResult map[uint8]protocol.ItemInstance
 }
 
