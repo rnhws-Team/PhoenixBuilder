@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"phoenixbuilder/minecraft/protocol"
 	"sync/atomic"
+
+	"github.com/pterm/pterm"
 )
 
 // 提交物品请求 ID 为 key 的物品操作。
@@ -153,17 +155,12 @@ func (i *itemStackRequestWithResponse) GetNewItemData(
 	newItem protocol.ItemInstance,
 	resp protocol.StackResponseSlotInfo,
 ) (protocol.ItemInstance, error) {
-	nbt := newItem.Stack.NBTData
-	// 获取物品的旧 NBT 数据
-	newItem.Stack.NBTData = nbt
 	newItem.Stack.Count = uint16(resp.Count)
 	newItem.StackNetworkID = resp.StackNetworkID
 	/*
 		newItem.Stack.MetadataValue = uint32(resp.DurabilityCorrection) [This line of code has not been tested for validity]
 	*/
-	// update values
 	return newItem, nil
-	// return
 }
 
 /*
@@ -179,43 +176,56 @@ func (i *itemStackRequestWithResponse) updateItemData(
 	resp protocol.ItemStackResponse,
 	inventory *inventoryContents,
 ) error {
-	value, exist := i.requestWithResponse.Load(resp.RequestID)
+	request_origin, exist := i.requestWithResponse.Load(resp.RequestID)
 	if !exist {
 		panic("updateItemData: Attempt to send packet.ItemStackRequest without using ResourcesControlCenter")
 	}
-	// if key is not exist
-	get, normal := value.(singleItemStackRequestWithResponse)
+	request_got, normal := request_origin.(singleItemStackRequestWithResponse)
 	if !normal {
-		panic(fmt.Sprintf("updateItemData: Failed to convert value into singleItemStackRequestWithResponse; value = %#v", value))
+		panic(fmt.Sprintf("updateItemData: Failed to convert request_origin into singleItemStackRequestWithResponse; value = %#v", request_origin))
 	}
-	// convert data
-	for _, val := range resp.ContainerInfo {
-		if get.howToChange == nil {
-			panic("updateItemData: Attempt to send packet.ItemStackRequest without using ResourcesControlCenter")
+	// 加载物品操作请求
+	for _, value := range resp.ContainerInfo {
+		if request_got.howToChange == nil {
+			panic("updateItemData: Results of item changes are not provided(packet.ItemStackRequest related)")
 		}
-		if val.ContainerID == 63 {
-			return nil // I don't understand what 63 is, I've never operated it, NetEase sucks.
+		currentRequest, ok := request_got.howToChange[ContainerID(value.ContainerID)]
+		if !ok {
+			pterm.Warning.Printf(
+				"updateItemData: request_got.howToChange[%d] is not provided(packet.ItemStackRequest related); request_got.howToChange = %#v; value = %#v\n",
+				ContainerID(value.ContainerID),
+				request_got.howToChange,
+				value,
+			)
+			return nil
 		}
-		if _, ok := get.howToChange[ContainerID(val.ContainerID)]; !ok {
-			panic(fmt.Sprintf("updateItemData: item change result %v not found or not provided(packet.ItemStackRequest related); get.howToChange = %#v; val = %#v", ContainerID(val.ContainerID), get.howToChange, val))
-		}
-		// check pass
-		currentChanges := get.howToChange[ContainerID(val.ContainerID)].ChangeResult
-		windowID := get.howToChange[ContainerID(val.ContainerID)].WindowID
-		// get currentChanges and windowID
-		for _, v := range val.SlotInfo {
+		// 数据检查
+		for _, val := range value.SlotInfo {
+			expectNewItem, ok := currentRequest.ChangeResult[val.Slot]
+			if !ok {
+				pterm.Warning.Printf(
+					"updateItemData: currentRequest.ChangeResult[%d] is not provided(packet.ItemStackRequest related); currentRequest.ChangeResult = %#v; val = %#v\n",
+					val.Slot,
+					currentRequest.ChangeResult,
+					val,
+				)
+				continue
+			}
+			// 数据检查
 			newItem, err := i.GetNewItemData(
-				currentChanges[v.Slot],
-				v,
+				expectNewItem,
+				val,
 			)
 			if err != nil {
-				panic(fmt.Sprintf("updateItemData: Failed to get new item data; currentChanges[v.Slot] = %#v, v = %#v", currentChanges[v.Slot], v))
+				panic(fmt.Sprintf("updateItemData: Failed to get new item data; currentRequest.ChangeResult[val.Slot] = %#v, val = %#v", currentRequest.ChangeResult[val.Slot], val))
 			}
-			inventory.writeItemStackInfo(windowID, v.Slot, newItem)
+			// 取得物品的新数据
+			inventory.writeItemStackInfo(currentRequest.WindowID, val.Slot, newItem)
+			// 将物品的新数据写入到本地库存中
 		}
-		// update item info
+		// 更新本地库存中一个或多个物品的数据
 	}
-	// set item data
+	// 设置物品数据
 	return nil
-	// return
+	// 返回值
 }
