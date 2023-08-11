@@ -16,7 +16,6 @@ import (
 	fbauth "phoenixbuilder/fastbuilder/pv4"
 	"phoenixbuilder/fastbuilder/py_rpc"
 	"phoenixbuilder/fastbuilder/readline"
-	script_bridge "phoenixbuilder/fastbuilder/script_engine/bridge"
 	"phoenixbuilder/fastbuilder/signalhandler"
 	fbtask "phoenixbuilder/fastbuilder/task"
 	"phoenixbuilder/fastbuilder/types"
@@ -29,7 +28,6 @@ import (
 	"phoenixbuilder/mirror/io/assembler"
 	"phoenixbuilder/mirror/io/global"
 	"phoenixbuilder/mirror/io/lru"
-	"phoenixbuilder/omega/cli/embed"
 	"runtime"
 	"strings"
 	"time"
@@ -54,10 +52,6 @@ func EnterReadlineThread(env *environment.PBEnvironment, breaker chan struct{}) 
 		}
 		cmd := readline.Readline(env)
 		if len(cmd) == 0 {
-			continue
-		}
-		if env.OmegaAdaptorHolder != nil && !strings.Contains(cmd, "exit") {
-			env.OmegaAdaptorHolder.(*embed.EmbeddedAdaptor).FeedBackendCommand(cmd)
 			continue
 		}
 		if cmd[0] == '.' {
@@ -105,7 +99,6 @@ func EnterReadlineThread(env *environment.PBEnvironment, breaker chan struct{}) 
 
 func EnterWorkerThread(env *environment.PBEnvironment, breaker chan struct{}) {
 	conn := env.Connection.(*minecraft.Conn)
-	hostBridgeGamma := env.ScriptBridge.(*script_bridge.HostBridgeGamma)
 	functionHolder := env.FunctionHolder.(*function.FunctionHolder)
 
 	chunkAssembler := assembler.NewAssembler(assembler.REQUEST_AGGRESSIVE, time.Second*5)
@@ -181,23 +174,9 @@ func EnterWorkerThread(env *environment.PBEnvironment, breaker chan struct{}) {
 			}
 		}
 
-		if env.OmegaAdaptorHolder != nil {
-			env.OmegaAdaptorHolder.(*embed.EmbeddedAdaptor).FeedPacketAndByte(pk, data)
-			continue
-		}
-
 		go env.ResourcesUpdater.(func(pk *packet.Packet))(&pk)
 
 		env.UQHolder.(*uqHolder.UQHolder).Update(pk)
-		hostBridgeGamma.HostPumpMcPacket(pk)
-		hostBridgeGamma.HostQueryExpose["uqHolder"] = func() string {
-			marshal, err := json.Marshal(env.UQHolder.(*uqHolder.UQHolder))
-			if err != nil {
-				marshalErr, _ := json.Marshal(map[string]string{"err": err.Error()})
-				return string(marshalErr)
-			}
-			return string(marshal)
-		}
 		if env.ExternalConnectionHandler != nil {
 			env.ExternalConnectionHandler.(*external.ExternalConnectionHandler).PacketChannel <- data
 		}
@@ -360,13 +339,6 @@ func EstablishConnectionAndInitEnv(env *environment.PBEnvironment) {
 		},
 		Resources: env.Resources.(*ResourcesControl.Resources),
 	}
-
-	if args.ShouldEnableOmegaSystem {
-		_, cb := embed.EnableOmegaSystem(env)
-		go cb()
-		//cb()
-	}
-
 	functionHolder := env.FunctionHolder.(*function.FunctionHolder)
 	function.InitPresetFunctions(functionHolder)
 	fbtask.InitTaskStatusDisplay(env)
@@ -379,23 +351,6 @@ func EstablishConnectionAndInitEnv(env *environment.PBEnvironment) {
 	move.RuntimeID = conn.GameData().EntityRuntimeID
 
 	signalhandler.Install(conn, env)
-
-	hostBridgeGamma := env.ScriptBridge.(*script_bridge.HostBridgeGamma)
-	hostBridgeGamma.HostSetSendCmdFunc(func(mcCmd string, waitResponse bool) *packet.CommandOutput {
-		if !waitResponse {
-			env.GameInterface.SendWSCommand(mcCmd)
-			return nil
-		}
-		resp := env.GameInterface.SendWSCommandWithResponse(
-			mcCmd,
-			ResourcesControl.CommandRequestOptions{
-				TimeOut: ResourcesControl.CommandRequestNoDeadLine,
-			},
-		)
-		return &resp.Respond
-	})
-	hostBridgeGamma.HostConnectEstablished()
-	defer hostBridgeGamma.HostConnectTerminate()
 
 	taskholder := env.TaskHolder.(*fbtask.TaskHolder)
 	types.ForwardedBrokSender = taskholder.BrokSender
