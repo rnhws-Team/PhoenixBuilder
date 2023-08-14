@@ -61,14 +61,47 @@ const (
 
 // 描述 Pick Block 失败后要重试的最大次数
 const (
-	// 容器打开失败后要重试的最大次数
-	ContainerOpenReTryMaximumCounts = 3
+	// 容器 打开/关闭 失败后要重试的最大次数
+	ContainerOperationsReTryMaximumCounts = 3
 	// 描述 Pick Block 失败后要重试的最大次数
 	BlockPickRequestReTryMaximumCounts = 3
 )
 
 // 用作铁砧的承重方块
-const AnvilBase string = "glass"
+const (
+	// 用作铁砧的承重方块
+	AnvilBase string = "minecraft:glass"
+	/*
+		用作放置方块时的依赖性方块。
+
+		部分方块需要客户端以点击方块的形式来放置，
+		例如告示牌和不同朝向的潜影盒。
+		这里则选择了绿宝石块作为被点击的方块。
+
+		SuperScript 最喜欢绿宝石块了！
+	*/
+	PlaceBlockBase string = "minecraft:emerald_block"
+)
+
+// 描述各个容器的容器 ID
+const (
+	// chest, trapped_chest,
+	// hopper, dispenser,
+	// dropper
+	ContainerIDDefault = byte(7)
+
+	ContainerIDInventory = byte(12)
+	ContainerIDHotBar    = byte(28)
+
+	ContainerIDFurnace      = byte(25)
+	ContainerIDSmoker       = byte(28)
+	ContainerIDShulkerBox   = byte(30)
+	ContainerIDBlastFurnace = byte(45)
+	ContainerIDBarrel       = byte(58)
+	ContainerIDBrewingStand = byte(59)
+
+	ContainerIDUnknown = byte(255)
+)
 
 // 描述各个维度的 ID
 const (
@@ -108,9 +141,16 @@ var AirItem protocol.ItemInstance = protocol.ItemInstance{
 	},
 }
 
-// 用于关闭容器时却发现到容器从未被打开时的报错信息
-var ErrContainerNerverOpened error = fmt.Errorf(
-	"CloseContainer: Container have been nerver opened",
+// 用于容器操作相关的报错信息
+var (
+	// 用于打开容器时却发现到容器已被打开时的报错信息
+	ErrContainerHasBeenOpened error = fmt.Errorf(
+		"OpenContainer: Container has been opened",
+	)
+	// 用于关闭容器时却发现到容器从未被打开时的报错信息
+	ErrContainerNerverOpened error = fmt.Errorf(
+		"CloseContainer: Container have been nerver opened",
+	)
 )
 
 // 如果尝试移动空气到另外一个物品栏，则会返回该错误
